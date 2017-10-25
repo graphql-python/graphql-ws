@@ -11,3 +11,4 @@ PyYAML==3.11
 pytest==2.9.2
 pytest-runner==2.11.1
 aiohttp==2.1.0
+graphene>=2.0

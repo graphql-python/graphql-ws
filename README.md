@@ -22,7 +22,7 @@ cd graphql-ws
 
 # Install the package
 python setup.py develop
-pip install -r requirements.txt
+pip install -r requirements_dev.txt
 
 # Demo time!
 cd examples
