@@ -1,5 +1,4 @@
-from collections import OrderedDict
-from asyncio import sleep
+import asyncio
 import graphene
 
 
@@ -14,7 +13,7 @@ class Subscription(graphene.ObjectType):
         for i in range(up_to):
             print("YIELD SECOND", i)
             yield i
-            await sleep(1.)
+            await asyncio.sleep(1.)
         yield up_to
 
 
