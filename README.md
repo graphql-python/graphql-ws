@@ -1,16 +1,6 @@
 # GraphQL WS
 
-.. image:: https://img.shields.io/pypi/v/graphql\_ws.svg :target: https://pypi.python.org/pypi/graphql\_ws
-
-.. image:: https://img.shields.io/travis/graphql-python/graphql\_ws.svg :target: https://travis-ci.org/graphql-python/graphql\_ws
-
-.. image:: https://readthedocs.org/projects/graphql-aiows/badge/?version=latest :target: https://graphql-aiows.readthedocs.io/en/latest/?badge=latest :alt: Documentation Status
-
-.. image:: https://pyup.io/repos/github/graphql-python/graphql\_ws/shield.svg :target: https://pyup.io/repos/github/graphql-python/graphql\_ws/ :alt: Updates
-
 Websocket server for GraphQL subscriptions.
-
--   Free software: MIT license
 
 # Installation instructions
 
