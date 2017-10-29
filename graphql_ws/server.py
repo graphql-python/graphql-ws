@@ -1,12 +1,14 @@
 from asyncio import ensure_future
 from graphql.execution.executors.asyncio import AsyncioExecutor
+from graphql.execution.executors.gevent import GeventExecutor
 from websockets.protocol import CONNECTING, OPEN
 from inspect import isawaitable, isasyncgen
 from graphql import graphql, format_error
+from graphql.execution import ExecutionResult
 from collections import OrderedDict
 import json
-
-
+import gevent
+from rx.core.anonymousobservable import AnonymousObservable
 GRAPHQL_WS = 'graphql-ws'
 WS_PROTOCOL = GRAPHQL_WS
 
@@ -48,6 +50,24 @@ class ConnectionContext(object):
     def remove_operation(self, op_id):
         del self.operations[op_id]
 
+class GEventConnectionContext(ConnectionContext):
+
+    def receive(self):
+        msg = self.ws.receive()
+        return msg
+
+    def send(self, data):
+        if self.closed:
+            return
+        self.ws.send(data)
+
+    @property
+    def closed(self):
+        return self.ws.closed
+
+    def close(self, code):
+        self.ws.close(code)
+    
 
 class AioHTTPConnectionContext(ConnectionContext):
     async def receive(self):
@@ -185,6 +205,76 @@ class BaseWebSocketSubscriptionServer(object):
     def on_operation_complete(self, connection_context, op_id):
         pass
 
+class GeventSubscriptionServer(BaseWebSocketSubscriptionServer):
+
+    def get_graphql_params(self, *args, **kwargs):
+        params = super(GeventSubscriptionServer, self).get_graphql_params(*args, **kwargs)
+        return dict(params, executor=GeventExecutor())
+
+    def handle(self, ws):
+        connection_context = GEventConnectionContext(ws)
+        self.on_open(connection_context)
+        while True:
+            try:
+                if connection_context.closed:
+                    raise ConnectionClosedException()
+                message = connection_context.receive()
+            except ConnectionClosedException:
+                self.on_close(connection_context)
+                return
+            self.on_message(connection_context, message)
+
+    def on_message(self, connection_context, message):
+        try:
+            parsed_message = json.loads(message)
+            assert isinstance(
+                parsed_message, dict), "Payload must be an object."
+        except Exception as e:
+            self.send_error(connection_context, None, e)
+            return
+
+        self.process_message(connection_context, parsed_message)
+
+    def on_open(self, connection_context):
+        pass
+
+    def on_connect(self, connection_context, payload):
+        pass
+
+    def on_close(self, connection_context):
+        remove_operations = list(connection_context.operations.keys())
+        for op_id in remove_operations:
+            self.unsubscribe(connection_context, op_id)
+
+    def on_connection_init(self, connection_context, op_id, payload):
+        try:
+            self.on_connect(connection_context, payload)
+            self.send_message(connection_context, op_type=GQL_CONNECTION_ACK)
+
+        except Exception as e:
+            self.send_error(connection_context, op_id, e, GQL_CONNECTION_ERROR)
+            connection_context.close(1011)
+
+    def on_connection_terminate(self, connection_context, op_id):
+        connection_context.close(1011)
+
+    
+    def on_start(self, connection_context, op_id, params):
+        try:
+            execution_result = graphql(
+                self.schema, **params, allow_subscriptions=True
+            )
+            def process_result(value):
+                self.send_execution_result(connection_context, op_id, value)
+            execution_result.subscribe(on_next=process_result,
+                 on_completed=lambda: print("Done!"),
+                 on_error=lambda error: print("Error Occurred: {0}".format(error))
+                 )
+        except Exception as e:
+            self.send_error(connection_context, op_id, str(e))
+
+    def on_stop(self, connection_context, op_id):
+        self.unsubscribe(connection_context, op_id)
 
 class WebSocketSubscriptionServer(BaseWebSocketSubscriptionServer):
 

@@ -16,10 +16,10 @@ class Query(graphene.ObjectType):
 
 class Subscription(graphene.ObjectType):
 
-    username = graphene.String()
+    count_seconds = graphene.String()
 
 
-    def resolve_username(root, info):
+    def resolve_count_seconds(root, info):
         return Observable.interval(1000).map(lambda i: "{0}".format(i))
 
 

@@ -30,7 +30,7 @@ test_requirements = [
 
 setup(
     name='graphql_ws',
-    version='0.1.0',
+    version='0.1.1',
     description="Websocket server for GraphQL subscriptions",
     long_description=readme + '\n\n' + history,
     author="Syrus Akbary",
