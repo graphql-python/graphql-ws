@@ -63,3 +63,4 @@ target/
 .DS_Store
 
 .mypy_cache/
+.vscode/
