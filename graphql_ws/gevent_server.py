@@ -3,8 +3,7 @@ import json
 from graphql import format_error, graphql
 from graphql.execution import ExecutionResult
 from graphql.execution.executors.sync import SyncExecutor
-from rx import Observer
-from promise import is_thenable, Promise
+from rx import Observer, Observable
 from .server import BaseWebSocketSubscriptionServer, ConnectionContext, ConnectionClosedException
 from .constants import *
 
@@ -86,6 +85,8 @@ class GeventSubscriptionServer(BaseWebSocketSubscriptionServer):
             execution_result = graphql(
                 self.schema, **params, allow_subscriptions=True
             )
+            assert isinstance(
+                execution_result, Observable), "A subscription must return an observable"
             execution_result.subscribe(SubscriptionObserver(
                     connection_context,
                     op_id,
