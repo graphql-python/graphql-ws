@@ -1,6 +1,7 @@
 import json
 
 from graphql import format_error, graphql
+from graphql.execution.executors.sync import SyncExecutor
 from rx import Observer, Observable
 from .server import BaseWebSocketSubscriptionServer, ConnectionContext, ConnectionClosedException
 from .constants import *

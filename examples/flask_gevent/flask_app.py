@@ -21,13 +21,15 @@ class RandomType(graphene.ObjectType):
 
 class Subscription(graphene.ObjectType):
 
-    count_seconds = graphene.Int()
+    count_seconds = graphene.Int(up_to=graphene.Int())
 
     random_int = graphene.Field(RandomType)
 
 
-    def resolve_count_seconds(root, info):
-        return Observable.interval(1000).map(lambda i: "{0}".format(i))
+    def resolve_count_seconds(root, info, up_to):
+        return Observable.interval(1000)\
+                         .map(lambda i: "{0}".format(i))\
+                         .take_while(lambda i: int(i) <= up_to)
 
     def resolve_random_int(root, info):
         import random
