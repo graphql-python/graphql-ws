@@ -138,11 +138,8 @@ class BaseWebSocketSubscriptionServer(object):
             message['payload'] = payload
 
         assert message, "You need to send at least one thing"
-        try:
-            json_message = json.dumps(message)
-            return connection_context.send(json_message)
-        except:
-            pass
+        json_message = json.dumps(message)
+        return connection_context.send(json_message)
 
     def send_error(self, connection_context, op_id, error, error_type=None):
         if error_type is None:
