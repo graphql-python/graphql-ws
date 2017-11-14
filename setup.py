@@ -36,7 +36,7 @@ setup(
     long_description=readme + '\n\n' + history,
     author="Syrus Akbary",
     author_email='me@syrusakbary.com',
-    url='https://github.com/graphql-python/graphql_ws',
+    url='https://github.com/graphql-python/graphql-ws',
     packages=find_packages(include=['graphql_ws']),
     include_package_data=True,
     install_requires=requirements,

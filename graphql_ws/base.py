@@ -21,9 +21,10 @@ class ConnectionClosedException(Exception):
 
 
 class BaseConnectionContext(object):
-    def __init__(self, ws):
+    def __init__(self, ws, request_context=None):
         self.ws = ws
         self.operations = {}
+        self.request_context = request_context
 
     def has_operation(self, op_id):
         return op_id in self.operations
@@ -167,13 +168,13 @@ class BaseSubscriptionServer(object):
         pass
 
     def on_connection_terminate(self, connection_context, op_id):
-        return connection_context.close()
+        return connection_context.close(1011)
 
-    def execute(self, **params):
+    def execute(self, request_context, params):
         return graphql(
             self.schema, **dict(params, allow_subscriptions=True))
 
-    def handle(self, ws):
+    def handle(self, ws, request_context=None):
         raise NotImplementedError("handle method not implemented")
 
     def on_message(self, connection_context, message):

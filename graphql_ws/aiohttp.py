@@ -39,10 +39,10 @@ class AiohttpSubscriptionServer(BaseSubscriptionServer):
     def get_graphql_params(self, *args, **kwargs):
         params = super(AiohttpSubscriptionServer,
                        self).get_graphql_params(*args, **kwargs)
-        return dict(params, executor=AsyncioExecutor())
+        return dict(params, return_promise=True, executor=AsyncioExecutor())
 
-    async def handle(self, ws):
-        connection_context = AiohttpConnectionContext(ws)
+    async def handle(self, ws, request_context=None):
+        connection_context = AiohttpConnectionContext(ws, request_context)
         await self.on_open(connection_context)
         while True:
             try:
@@ -70,19 +70,13 @@ class AiohttpSubscriptionServer(BaseSubscriptionServer):
         try:
             await self.on_connect(connection_context, payload)
             await self.send_message(connection_context, op_type=GQL_CONNECTION_ACK)
-
-            # if self.keep_alive:
-            # await self.send_message(connection_context,
-            # op_type=GQL_CONNECTION_KEEP_ALIVE)
         except Exception as e:
             await self.send_error(connection_context, op_id, e, GQL_CONNECTION_ERROR)
             await connection_context.close(1011)
 
-    async def on_connection_terminate(self, connection_context, op_id):
-        await connection_context.close(1011)
-
     async def on_start(self, connection_context, op_id, params):
-        execution_result = self.execute(return_promise=True, **params)
+        execution_result = self.execute(
+            connection_context.request_context, params)
 
         if isawaitable(execution_result):
             execution_result = await execution_result

@@ -42,8 +42,8 @@ class GeventSubscriptionServer(BaseSubscriptionServer):
                        self).get_graphql_params(*args, **kwargs)
         return dict(params, executor=SyncExecutor())
 
-    def handle(self, ws):
-        connection_context = GeventConnectionContext(ws)
+    def handle(self, ws, request_context=None):
+        connection_context = GeventConnectionContext(ws, request_context)
         self.on_open(connection_context)
         while True:
             try:
@@ -75,12 +75,10 @@ class GeventSubscriptionServer(BaseSubscriptionServer):
             self.send_error(connection_context, op_id, e, GQL_CONNECTION_ERROR)
             connection_context.close(1011)
 
-    def on_connection_terminate(self, connection_context, op_id):
-        connection_context.close(1011)
-
     def on_start(self, connection_context, op_id, params):
         try:
-            execution_result = self.execute(**params)
+            execution_result = self.execute(
+                connection_context.request_context, params)
             assert isinstance(
                 execution_result, Observable), "A subscription must return an observable"
             execution_result.subscribe(SubscriptionObserver(
