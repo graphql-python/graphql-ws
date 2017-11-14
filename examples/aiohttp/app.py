@@ -1,9 +1,11 @@
-from aiohttp import web, WSMsgType
-from template import render_graphiql
+import json
+
+from aiohttp import web
 from schema import schema
 from graphql import format_error
-import json
-from graphql_ws import WebSocketSubscriptionServer
+from graphql_ws.aiohttp import AiohttpSubscriptionServer
+
+from template import render_graphiql
 
 
 async def graphql_view(request):
@@ -21,7 +23,7 @@ async def graphql_view(request):
 async def graphiql_view(request):
     return web.Response(text=render_graphiql(), headers={'Content-Type': 'text/html'})
 
-subscription_server = WebSocketSubscriptionServer(schema)
+subscription_server = AiohttpSubscriptionServer(schema)
 
 
 async def subscriptions(request):
@@ -29,19 +31,6 @@ async def subscriptions(request):
     await ws.prepare(request)
 
     await subscription_server.handle(ws)
-
-    # async for msg in ws:
-    #     if msg.type == WSMsgType.TEXT:
-    #         if msg.data == 'close':
-    #             await ws.close()
-    #         else:
-    #             await ws.send_str(msg.data + '/answer')
-    #     elif msg.type == WSMsgType.ERROR:
-    #         print('ws connection closed with exception %s' %
-    #               ws.exception())
-
-    # print('websocket connection closed')
-
     return ws
 
 

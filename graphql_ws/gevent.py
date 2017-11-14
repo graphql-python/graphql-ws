@@ -1,13 +1,22 @@
+from __future__ import absolute_import
+
 import json
 
 from graphql import format_error, graphql
 from graphql.execution.executors.sync import SyncExecutor
 from rx import Observer, Observable
-from .server import BaseWebSocketSubscriptionServer, ConnectionContext, ConnectionClosedException
-from .constants import *
+from .base import (
+    ConnectionClosedException,
+    BaseConnectionContext,
+    BaseSubscriptionServer
+)
+from .constants import (
+    GQL_CONNECTION_ACK,
+    GQL_CONNECTION_ERROR
+)
 
 
-class GEventConnectionContext(ConnectionContext):
+class GeventConnectionContext(BaseConnectionContext):
 
     def receive(self):
         msg = self.ws.receive()
@@ -25,14 +34,16 @@ class GEventConnectionContext(ConnectionContext):
     def close(self, code):
         self.ws.close(code)
 
-class GeventSubscriptionServer(BaseWebSocketSubscriptionServer):
+
+class GeventSubscriptionServer(BaseSubscriptionServer):
 
     def get_graphql_params(self, *args, **kwargs):
-        params = super(GeventSubscriptionServer, self).get_graphql_params(*args, **kwargs)
+        params = super(GeventSubscriptionServer,
+                       self).get_graphql_params(*args, **kwargs)
         return dict(params, executor=SyncExecutor())
 
     def handle(self, ws):
-        connection_context = GEventConnectionContext(ws)
+        connection_context = GeventConnectionContext(ws)
         self.on_open(connection_context)
         while True:
             try:
@@ -43,17 +54,6 @@ class GeventSubscriptionServer(BaseWebSocketSubscriptionServer):
                 self.on_close(connection_context)
                 return
             self.on_message(connection_context, message)
-
-    def on_message(self, connection_context, message):
-        try:
-            parsed_message = json.loads(message)
-            assert isinstance(
-                parsed_message, dict), "Payload must be an object."
-        except Exception as e:
-            self.send_error(connection_context, None, e)
-            return
-
-        self.process_message(connection_context, parsed_message)
 
     def on_open(self, connection_context):
         pass
@@ -78,22 +78,18 @@ class GeventSubscriptionServer(BaseWebSocketSubscriptionServer):
     def on_connection_terminate(self, connection_context, op_id):
         connection_context.close(1011)
 
-    
     def on_start(self, connection_context, op_id, params):
         try:
-            execution_result = graphql(
-                self.schema, **params, allow_subscriptions=True
-            )
+            execution_result = self.execute(**params)
             assert isinstance(
                 execution_result, Observable), "A subscription must return an observable"
             execution_result.subscribe(SubscriptionObserver(
-                    connection_context,
-                    op_id,
-                    self.send_execution_result,
-                    self.send_error,
-                    self.on_close
-                )
-            )
+                connection_context,
+                op_id,
+                self.send_execution_result,
+                self.send_error,
+                self.on_close
+            ))
         except Exception as e:
             self.send_error(connection_context, op_id, str(e))
 
@@ -115,6 +111,6 @@ class SubscriptionObserver(Observer):
 
     def on_completed(self):
         self.on_close(self.connection_context)
-    
+
     def on_error(self, error):
         self.send_error(self.connection_context, self.op_id, error)

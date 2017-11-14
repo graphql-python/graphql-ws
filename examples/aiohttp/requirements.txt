@@ -1,0 +1,3 @@
+graphql_ws
+aiohttp>=2.1.0
+graphene>=2.0

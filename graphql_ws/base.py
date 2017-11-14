@@ -1,23 +1,26 @@
-from asyncio import ensure_future
-from graphql.execution.executors.asyncio import AsyncioExecutor
-from websockets.protocol import CONNECTING, OPEN
-from inspect import isawaitable, isasyncgen
+import json
+from collections import OrderedDict
+
 from graphql import graphql, format_error
 from graphql.execution import ExecutionResult
-from collections import OrderedDict
-import json
-from .constants import *
 
+from .constants import (
+    GQL_CONNECTION_INIT,
+    GQL_CONNECTION_TERMINATE,
+    GQL_START,
+    GQL_STOP,
+    GQL_COMPLETE,
+    GQL_ERROR,
+    GQL_CONNECTION_ERROR,
+    GQL_DATA
+)
 
 
 class ConnectionClosedException(Exception):
     pass
 
 
-from aiohttp import WSMsgType
-
-
-class ConnectionContext(object):
+class BaseConnectionContext(object):
     def __init__(self, ws):
         self.ws = ws
         self.operations = {}
@@ -34,30 +37,21 @@ class ConnectionContext(object):
     def remove_operation(self, op_id):
         del self.operations[op_id]
 
-    
+    def receive(self):
+        raise NotImplementedError("receive method not implemented")
 
-class AioHTTPConnectionContext(ConnectionContext):
-    async def receive(self):
-        msg = await self.ws.receive()
-        if msg.type == WSMsgType.TEXT:
-            return msg.data
-        elif msg.type == WSMsgType.ERROR:
-            raise ConnectionClosedException()
-
-    async def send(self, data):
-        if self.closed:
-            return
-        await self.ws.send_str(data)
+    def send(self, data):
+        raise NotImplementedError("send method not implemented")
 
     @property
     def closed(self):
-        return self.ws.closed
+        raise NotImplementedError("closed property not implemented")
 
-    async def close(self, code):
-        await self.ws.close(code)
+    def close(self, code):
+        raise NotImplementedError("close method not implemented")
 
 
-class BaseWebSocketSubscriptionServer(object):
+class BaseSubscriptionServer(object):
 
     def __init__(self, schema, keep_alive=True):
         self.schema = schema
@@ -172,85 +166,40 @@ class BaseWebSocketSubscriptionServer(object):
     def on_operation_complete(self, connection_context, op_id):
         pass
 
+    def on_connection_terminate(self, connection_context, op_id):
+        return connection_context.close()
 
+    def execute(self, **params):
+        return graphql(
+            self.schema, **dict(params, allow_subscriptions=True))
 
-class WebSocketSubscriptionServer(BaseWebSocketSubscriptionServer):
+    def handle(self, ws):
+        raise NotImplementedError("handle method not implemented")
 
-    def get_graphql_params(self, *args, **kwargs):
-        params = super(WebSocketSubscriptionServer,
-                       self).get_graphql_params(*args, **kwargs)
-        return dict(params, executor=AsyncioExecutor())
-
-    async def handle(self, ws):
-        connection_context = AioHTTPConnectionContext(ws)
-        await self.on_open(connection_context)
-        while True:
-            try:
-                if connection_context.closed:
-                    raise ConnectionClosedException()
-                message = await connection_context.receive()
-            except ConnectionClosedException:
-                self.on_close(connection_context)
-                return
-
-            ensure_future(self.on_message(connection_context, message))
-
-    async def on_open(self, connection_context):
-        pass
-
-    def on_close(self, connection_context):
-        remove_operations = list(connection_context.operations.keys())
-        # print("CONNECTION CLOSED", remove_operations)
-        for op_id in remove_operations:
-            self.unsubscribe(connection_context, op_id)
-
-    async def on_connect(self, connection_context, payload):
-        pass
-
-    async def on_message(self, connection_context, message):
+    def on_message(self, connection_context, message):
         try:
             parsed_message = json.loads(message)
             assert isinstance(
                 parsed_message, dict), "Payload must be an object."
         except Exception as e:
-            await self.send_error(connection_context, None, e)
-            return
+            return self.send_error(connection_context, None, e)
 
-        await self.process_message(connection_context, parsed_message)
+        return self.process_message(connection_context, parsed_message)
 
-    async def on_connection_init(self, connection_context, op_id, payload):
-        try:
-            await self.on_connect(connection_context, payload)
-            await self.send_message(connection_context, op_type=GQL_CONNECTION_ACK)
+    def on_open(self, connection_context):
+        raise NotImplementedError("on_open method not implemented")
 
-            # if self.keep_alive:
-            # await self.send_message(connection_context,
-            # op_type=GQL_CONNECTION_KEEP_ALIVE)
-        except Exception as e:
-            await self.send_error(connection_context, op_id, e, GQL_CONNECTION_ERROR)
-            await connection_context.close(1011)
+    def on_connect(self, connection_context, payload):
+        raise NotImplementedError("on_connect method not implemented")
 
-    async def on_connection_terminate(self, connection_context, op_id):
-        await connection_context.close(1011)
+    def on_close(self, connection_context):
+        raise NotImplementedError("on_close method not implemented")
 
-    async def on_start(self, connection_context, op_id, params):
+    def on_connection_init(self, connection_context, op_id, payload):
+        raise NotImplementedError("on_connection_init method not implemented")
 
-        execution_result = graphql(
-            self.schema, return_promise=True, **params, allow_subscriptions=True)
+    def on_stop(self, connection_context, op_id):
+        raise NotImplementedError("on_stop method not implemented")
 
-        if isawaitable(execution_result):
-            execution_result = await execution_result
-
-        # print("execution result type", type(execution_result))
-        if not hasattr(execution_result, '__aiter__'):
-            await self.send_execution_result(connection_context, op_id, execution_result)
-        else:
-            iterator = await execution_result.__aiter__()
-            connection_context.register_operation(op_id, iterator)
-            async for single_result in iterator:
-                if not connection_context.has_operation(op_id):
-                    break
-                await self.send_execution_result(connection_context, op_id, single_result)
-
-    async def on_stop(self, connection_context, op_id):
-        self.unsubscribe(connection_context, op_id)
+    def on_start(self, connection_context, op_id, params):
+        raise NotImplementedError("on_start method not implemented")

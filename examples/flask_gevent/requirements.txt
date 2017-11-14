@@ -1,0 +1,6 @@
+graphql_ws
+gevent
+flask
+flask_graphql
+flask_sockets
+graphene>=2.0

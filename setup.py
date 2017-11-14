@@ -14,6 +14,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
+    'graphql-core>=2.0<3',
     # TODO: put package requirements here
 ]
 

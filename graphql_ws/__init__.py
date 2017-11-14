@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Top-level package for GraphQL AioWS."""
+"""Top-level package for GraphQL WS."""
 
 __author__ = """Syrus Akbary"""
 __email__ = 'me@syrusakbary.com'
@@ -8,7 +8,6 @@ __version__ = '0.1.0'
 
 
 from .observable_aiter import setup_observable_extension
-from .server import WebSocketSubscriptionServer
-from .gevent_server import GeventSubscriptionServer
+from .base import BaseConnectionContext, BaseSubscriptionServer
 
 setup_observable_extension()

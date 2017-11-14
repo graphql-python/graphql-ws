@@ -6,7 +6,7 @@
 import pytest
 
 
-from graphql_ws import graphql_ws
+from graphql_ws import base
 
 
 @pytest.fixture
