@@ -2,24 +2,19 @@
 
 Websocket server for GraphQL subscriptions.
 
+Currently supports:
+* [aiohttp](https://github.com/graphql-python/graphql-ws#aiohttp)
+* [Gevent](https://github.com/graphql-python/graphql-ws#gevent)
+
 # Installation instructions
 
-For having a demo with Python 3.6:
+For instaling graphql-ws, just run this command in your shell
 
-```shell
-git clone https://github.com/graphql-python/graphql-ws.git
-cd graphql-ws
-
-# Install the package
-python setup.py develop
-pip install -r requirements_dev.txt
-
-# Demo time!
-cd examples
-python aio.py
+```bash
+pip install graphql-ws
 ```
 
-## Setup
+## Examples
 
 ### aiohttp
 
@@ -69,6 +64,7 @@ class Subscription(graphene.ObjectType):
 schema = graphene.Schema(query=Query, subscription=Subscription)
 ```
 
+You can see a full example here: https://github.com/graphql-python/graphql-ws/tree/master/examples/aiohttp
 
 ### Gevent
 
@@ -106,3 +102,5 @@ class Subscription(graphene.ObjectType):
 
 schema = graphene.Schema(query=Query, subscription=Subscription)
 ```
+
+You can see a full example here: https://github.com/graphql-python/graphql-ws/tree/master/examples/flask_gevent
