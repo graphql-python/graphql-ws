@@ -5,12 +5,15 @@ from aiohttp import WSMsgType
 from graphql.execution.executors.asyncio import AsyncioExecutor
 
 from .base import ConnectionClosedException, BaseConnectionContext, BaseSubscriptionServer
+from .observable_aiter import setup_observable_extension
 
 from .constants import (
     GQL_CONNECTION_ACK,
     GQL_CONNECTION_ERROR,
     GQL_COMPLETE
 )
+
+setup_observable_extension()
 
 
 class AiohttpConnectionContext(BaseConnectionContext):

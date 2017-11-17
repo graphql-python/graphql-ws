@@ -30,7 +30,7 @@ test_requirements = [
 ]
 
 setup(
-    name='graphql_ws',
+    name='graphql-ws',
     version='0.1.1',
     description="Websocket server for GraphQL subscriptions",
     long_description=readme + '\n\n' + history,
@@ -42,7 +42,7 @@ setup(
     install_requires=requirements,
     license="MIT license",
     zip_safe=False,
-    keywords='graphql_ws',
+    keywords=['graphql', 'subscriptions', 'graphene', 'websockets'],
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
