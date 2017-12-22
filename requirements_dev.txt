@@ -10,3 +10,5 @@ pytest==2.9.2
 pytest-runner==2.11.1
 gevent
 graphene>=2.0
+django
+channels

@@ -179,9 +179,12 @@ class BaseSubscriptionServer(object):
 
     def on_message(self, connection_context, message):
         try:
-            parsed_message = json.loads(message)
-            assert isinstance(
-                parsed_message, dict), "Payload must be an object."
+            if not isinstance(message, dict):
+                parsed_message = json.loads(message)
+                assert isinstance(
+                    parsed_message, dict), "Payload must be an object."
+            else:
+                parsed_message = message
         except Exception as e:
             return self.send_error(connection_context, None, e)
 
