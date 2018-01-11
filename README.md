@@ -5,6 +5,7 @@ Websocket server for GraphQL subscriptions.
 Currently supports:
 * [aiohttp](https://github.com/graphql-python/graphql-ws#aiohttp)
 * [Gevent](https://github.com/graphql-python/graphql-ws#gevent)
+* Sanic (uses [websockets](https://github.com/aaugustin/websockets/) library)
 
 # Installation instructions
 
@@ -38,6 +39,27 @@ app = web.Application()
 app.router.add_get('/subscriptions', subscriptions)
 
 web.run_app(app, port=8000)
+```
+
+### Sanic
+
+Works with any framework that uses the websockets library for
+it's websocket implementation. For this example, plug in
+your Sanic server.
+
+```python
+from graphql_ws.websockets_lib import WsLibSubscriptionServer
+
+
+subscription_server = WsLibSubscriptionServer(schema)
+
+@app.websocket('/subscriptions', subprotocols=['graphql-ws'])
+async def subscriptions(request, ws):
+    await subscription_server.handle(ws)
+    return ws
+
+
+app.run(host="0.0.0.0", port=8000)
 ```
 
 And then, plug into a subscribable schema:
