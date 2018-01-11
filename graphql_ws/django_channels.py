@@ -96,11 +96,7 @@ class DjangoChannelSubscriptionServer(BaseSubscriptionServer):
 
 
 class GraphQLSubscriptionConsumer(JsonWebsocketConsumer):
-     # Set to True to automatically port users from HTTP cookies
-    # (you don't need channel_session_user, this implies it)
     http_user_and_session = True
-
-    # Set to True if you want it, else leave it out
     strict_ordering = True
 
     def connect(self, message, **kwargs):
