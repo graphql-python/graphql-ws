@@ -1,0 +1,3 @@
+graphql_ws
+sanic>=0.7.0
+graphene>=2.0
