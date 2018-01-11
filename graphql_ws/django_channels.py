@@ -25,6 +25,13 @@ class DjangoChannelConnectionContext(BaseConnectionContext):
 
     def send(self, data):
         self.message.reply_channel.send(data)
+    
+    def close(self, reason):
+        data = {
+            'close': True,
+            'text': reason
+        }
+        self.message.reply_channel.send(data)
 
 class DjangoChannelSubscriptionServer(BaseSubscriptionServer):
 
@@ -35,7 +42,7 @@ class DjangoChannelSubscriptionServer(BaseSubscriptionServer):
 
     def handle(self, message, connection_context):
         self.on_message(connection_context, message)
-        
+
     def send_message(self, connection_context, op_id=None, op_type=None, payload=None):
         message = {}
         if op_id is not None:
@@ -46,7 +53,6 @@ class DjangoChannelSubscriptionServer(BaseSubscriptionServer):
             message['payload'] = payload
 
         assert message, "You need to send at least one thing"
- 
         return connection_context.send({'text': json.dumps(message)})
 
     def on_open(self, connection_context):
@@ -98,10 +104,8 @@ class GraphQLSubscriptionConsumer(JsonWebsocketConsumer):
     strict_ordering = True
 
     def connect(self, message, **kwargs):
-        schema = getattr(settings, "schema", None)
-
         message.reply_channel.send({"accept": True})
-        print(self)
+
 
     def receive(self, content, **kwargs):
         """
@@ -112,13 +116,6 @@ class GraphQLSubscriptionConsumer(JsonWebsocketConsumer):
         self.subscription_server = DjangoChannelSubscriptionServer(graphene_settings.SCHEMA)
         self.subscription_server.on_open(self.connection_context)
         self.subscription_server.handle(content, self.connection_context)
-
-    def disconnect(self, message, **kwargs):
-        """
-        Perform things on connection close
-        """
-        # self.subscription_cserver.on_close(self.connection_context)
-
 
 class SubscriptionObserver(Observer):
 
