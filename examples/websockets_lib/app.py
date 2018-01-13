@@ -1,23 +1,18 @@
-from graphql import format_error
 from graphql_ws.websockets_lib import WsLibSubscriptionServer
+from graphql.execution.executors.asyncio import AsyncioExecutor
 from sanic import Sanic, response
+from sanic_graphql import GraphQLView
 from schema import schema
 from template import render_graphiql
 
 app = Sanic(__name__)
 
 
-@app.route('/graphql', methods=['GET', 'POST'])
-async def graphql_view(request):
-    payload = request.json
-    result = await schema.execute(payload.get('query', ''),
-                                  return_promise=True)
-    data = {}
-    if result.errors:
-        data['errors'] = [format_error(e) for e in result.errors]
-    if result.data:
-        data['data'] = result.data
-    return response.json(data,)
+@app.listener('before_server_start')
+def init_graphql(app, loop):
+    app.add_route(GraphQLView.as_view(schema=schema,
+                                      executor=AsyncioExecutor(loop=loop)),
+                                      '/graphql')
 
 
 @app.route('/graphiql')

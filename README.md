@@ -51,6 +51,8 @@ your Sanic server.
 from graphql_ws.websockets_lib import WsLibSubscriptionServer
 
 
+app = Sanic(__name__)
+
 subscription_server = WsLibSubscriptionServer(schema)
 
 @app.websocket('/subscriptions', subprotocols=['graphql-ws'])
