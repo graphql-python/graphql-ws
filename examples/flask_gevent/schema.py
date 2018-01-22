@@ -2,9 +2,17 @@ import random
 import graphene
 from rx import Observable
 
+from graphql_ws.pubsub import RxPubsub
+
+p = RxPubsub()
+
 
 class Query(graphene.ObjectType):
-    base = graphene.String()
+    base = graphene.String(value=graphene.String())
+
+    def resolve_base(root, info, value='Hello World!'):
+        p.publish('BASE', value)
+        return value
 
 
 class RandomType(graphene.ObjectType):
@@ -17,6 +25,11 @@ class Subscription(graphene.ObjectType):
     count_seconds = graphene.Int(up_to=graphene.Int())
 
     random_int = graphene.Field(RandomType)
+
+    base_sub = graphene.String()
+
+    def resolve_base_sub(root, info):
+        return p.subscribe_to_channel('BASE')
 
     def resolve_count_seconds(root, info, up_to=5):
         return Observable.interval(1000)\
