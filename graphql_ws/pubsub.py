@@ -1,4 +1,10 @@
+import gevent
+import pickle
+import redis
+
 from asyncio import Queue
+from rx import Observable
+from rx.concurrency import GEventScheduler
 from rx.subjects import Subject
 
 
@@ -43,3 +49,40 @@ class RxPubsub(object):
             subject = Subject()
             self.subscriptions[channel] = subject
             return subject
+
+
+class GeventRedisPubsub(object):
+
+    def __init__(self, host='localhost', port=6379, *args, **kwargs):
+        redis.connection.socket = gevent.socket
+        self.redis = redis.StrictRedis(host, port, *args, **kwargs)
+        self.subscriptions = {}
+        self.sub_id = 0
+
+    def publish(self, channel, payload):
+        self.redis.publish(channel, pickle.dumps(payload))
+
+    def subscribe_to_channel(self, channel):
+        self.sub_id += 1
+
+        self.pubsub = self.redis.pubsub()
+        self.pubsub.subscribe(channel)
+
+        self.subscriptions[self.sub_id] = self.pubsub
+
+        def wait_and_get_messages(observer):
+            while True:
+                message = self.pubsub.get_message(
+                    ignore_subscribe_messages=True)
+                if message:
+                    observer.on_next(pickle.loads(message['data']))
+                gevent.sleep(.001)
+
+        return self.sub_id, Observable.create(wait_and_get_messages)\
+            .subscribe_on(GEventScheduler())
+
+    def unsubscribe(self, channel, sub_id):
+        if sub_id in self.subscriptions:
+            self.subscriptions[sub_id].unsubscribe(channel)
+            self.subscriptions[sub_id].close()
+            del self.subscriptions[sub_id]
