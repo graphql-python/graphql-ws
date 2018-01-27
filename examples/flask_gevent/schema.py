@@ -32,13 +32,8 @@ class Subscription(graphene.ObjectType):
 
     def resolve_base_sub(root, info):
         # subscribe_to_channel method returns an observable
-        sub_id, observable = p.subscribe_to_channel('BASE')
-        return observable.map(lambda i: "{0}".format(i))
-
-    # def resolve_base_sub(root, info):
-        # # subscribe_to_channel method returns an observable
-        # return p.subscribe_to_channel('BASE')\
-                         # .map(lambda i: "{0}".format(i))
+        return p.subscribe_to_channel('BASE')\
+                         .map(lambda i: "{0}".format(i))
 
     def resolve_count_seconds(root, info, up_to=5):
         return Observable.interval(1000)\

@@ -57,32 +57,30 @@ class GeventRedisPubsub(object):
         redis.connection.socket = gevent.socket
         self.redis = redis.StrictRedis(host, port, *args, **kwargs)
         self.subscriptions = {}
-        self.sub_id = 0
 
     def publish(self, channel, payload):
         self.redis.publish(channel, pickle.dumps(payload))
 
     def subscribe_to_channel(self, channel):
-        self.sub_id += 1
+        if channel in self.subscriptions:
+            return self.subscriptions[channel]
+        else:
+            pubsub = self.redis.pubsub()
+            pubsub.subscribe(channel)
 
-        self.pubsub = self.redis.pubsub()
-        self.pubsub.subscribe(channel)
+            def wait_and_get_messages(observer):
+                while True:
+                    message = pubsub.get_message(
+                        ignore_subscribe_messages=True)
+                    if message:
+                        observer.on_next(pickle.loads(message['data']))
+                    gevent.sleep(.001)
 
-        self.subscriptions[self.sub_id] = self.pubsub
+            observable = Observable.create(wait_and_get_messages)\
+                .subscribe_on(GEventScheduler())\
+                .publish()\
+                .auto_connect()
 
-        def wait_and_get_messages(observer):
-            while True:
-                message = self.pubsub.get_message(
-                    ignore_subscribe_messages=True)
-                if message:
-                    observer.on_next(pickle.loads(message['data']))
-                gevent.sleep(.001)
+            self.subscriptions[channel] = observable
 
-        return self.sub_id, Observable.create(wait_and_get_messages)\
-            .subscribe_on(GEventScheduler())
-
-    def unsubscribe(self, channel, sub_id):
-        if sub_id in self.subscriptions:
-            self.subscriptions[sub_id].unsubscribe(channel)
-            self.subscriptions[sub_id].close()
-            del self.subscriptions[sub_id]
+            return observable
