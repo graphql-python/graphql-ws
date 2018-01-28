@@ -1,10 +1,9 @@
-import gevent
 import pickle
+
+import gevent
 import redis
 
 from asyncio import Queue
-from rx import Observable
-from rx.concurrency import GEventScheduler
 from rx.subjects import Subject
 
 
@@ -56,7 +55,9 @@ class GeventRedisPubsub(object):
     def __init__(self, host='localhost', port=6379, *args, **kwargs):
         redis.connection.socket = gevent.socket
         self.redis = redis.StrictRedis(host, port, *args, **kwargs)
+        self.pubsub = self.redis.pubsub(ignore_subscribe_messages=True)
         self.subscriptions = {}
+        self.greenlet = None
 
     def publish(self, channel, payload):
         self.redis.publish(channel, pickle.dumps(payload))
@@ -65,22 +66,22 @@ class GeventRedisPubsub(object):
         if channel in self.subscriptions:
             return self.subscriptions[channel]
         else:
-            pubsub = self.redis.pubsub()
-            pubsub.subscribe(channel)
+            self.pubsub.subscribe(channel)
+            subject = Subject()
+            self.subscriptions[channel] = subject
+            if not self.greenlet:
+                self.greenlet = gevent.spawn(self._wait_and_get_messages)
+            return subject
 
-            def wait_and_get_messages(observer):
-                while True:
-                    message = pubsub.get_message(
-                        ignore_subscribe_messages=True)
-                    if message:
-                        observer.on_next(pickle.loads(message['data']))
-                    gevent.sleep(.001)
-
-            observable = Observable.create(wait_and_get_messages)\
-                .subscribe_on(GEventScheduler())\
-                .publish()\
-                .auto_connect()
-
-            self.subscriptions[channel] = observable
-
-            return observable
+    def _wait_and_get_messages(self):
+        while True:
+            msg = self.pubsub.get_message()
+            if msg:
+                if isinstance(msg['channel'], bytes):
+                    channel = msg['channel'].decode()
+                else:
+                    channel = msg['channel']
+                if channel in self.subscriptions:
+                    self.subscriptions[channel].on_next(pickle.loads(
+                        msg['data']))
+            gevent.sleep(.001)
