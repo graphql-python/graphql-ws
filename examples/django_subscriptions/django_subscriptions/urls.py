@@ -32,9 +32,4 @@ urlpatterns = [
     url(r'^graphql', csrf_exempt(GraphQLView.as_view(graphiql=True)))
 ]
 
-from channels.routing import route_class
-from graphql_ws.django_channels import GraphQLSubscriptionConsumer
 
-channel_routing = [
-    route_class(GraphQLSubscriptionConsumer, path=r"^/subscriptions"),
-]

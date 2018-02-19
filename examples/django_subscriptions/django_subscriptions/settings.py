@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+ASGI_APPLICATION = "django_subscriptions.routing.application"
 
 # Application definition
 
@@ -39,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'channels',
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -119,19 +121,21 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
-CHANNELS_WS_PROTOCOLS = ["graphql-ws", ]
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "asgi_redis.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("localhost", 6379)],
-        },
-        "ROUTING": "django_subscriptions.urls.channel_routing",
-    },
+CHANNELS_WS_PROTOCOLS = ["graphql-ws"]
 
-}
+
 
 
 GRAPHENE = {
     'SCHEMA': 'django_subscriptions.schema.schema'
+}
+
+LOGGING = {
+    'version': 1,
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        }
+    }
 }
