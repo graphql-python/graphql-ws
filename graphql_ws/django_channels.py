@@ -25,7 +25,6 @@ class DjangoChannelConnectionContext(BaseConnectionContext):
         self.request_context = None
 
     def send(self, data):
-        print(data)
         self.send_json(data)
     
     def close(self, reason):
@@ -65,7 +64,6 @@ class DjangoChannelSubscriptionServer(BaseSubscriptionServer):
             self.send_message(connection_context, op_type=GQL_CONNECTION_ACK)
 
         except Exception as e:
-            print(e)
             self.send_error(connection_context, op_id, e, GQL_CONNECTION_ERROR)
             connection_context.close(1011)
 
@@ -97,11 +95,9 @@ class DjangoChannelSubscriptionServer(BaseSubscriptionServer):
 class GraphQLSubscriptionConsumer(JsonWebsocketConsumer):
 
     def connect(self):
-        print('here')
         self.accept()
 
     def receive_json(self, content):
-        print(content)
         self.connection_context = DjangoChannelConnectionContext(self.send_json, self.close)
         self.subscription_server = DjangoChannelSubscriptionServer(graphene_settings.SCHEMA)
         self.subscription_server.on_open(self.connection_context)
