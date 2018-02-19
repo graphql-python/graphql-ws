@@ -1,4 +1,4 @@
-from channels.generic.websockets import JsonWebsocketConsumer
+from channels.generic.websocket import JsonWebsocketConsumer
 from .base import BaseConnectionContext
 import json
 from graphql.execution.executors.sync import SyncExecutor
@@ -18,20 +18,18 @@ from graphene_django.settings import graphene_settings
 
 class DjangoChannelConnectionContext(BaseConnectionContext):
     
-    def __init__(self, message, request_context = None):
-        self.message = message
+    def __init__(self, send_json, close, request_context=None):
+        self.send_json = send_json
+        self.close = close
         self.operations = {}
-        self.request_context = request_context
+        self.request_context = None
 
     def send(self, data):
-        self.message.reply_channel.send(data)
+        print(data)
+        self.send_json(data)
     
     def close(self, reason):
-        data = {
-            'close': True,
-            'text': reason
-        }
-        self.message.reply_channel.send(data)
+        self.close()
 
 class DjangoChannelSubscriptionServer(BaseSubscriptionServer):
 
@@ -53,7 +51,7 @@ class DjangoChannelSubscriptionServer(BaseSubscriptionServer):
             message['payload'] = payload
 
         assert message, "You need to send at least one thing"
-        return connection_context.send({'text': json.dumps(message)})
+        return connection_context.send(message)
 
     def on_open(self, connection_context):
         pass
@@ -67,6 +65,7 @@ class DjangoChannelSubscriptionServer(BaseSubscriptionServer):
             self.send_message(connection_context, op_type=GQL_CONNECTION_ACK)
 
         except Exception as e:
+            print(e)
             self.send_error(connection_context, op_id, e, GQL_CONNECTION_ERROR)
             connection_context.close(1011)
 
@@ -96,22 +95,18 @@ class DjangoChannelSubscriptionServer(BaseSubscriptionServer):
 
 
 class GraphQLSubscriptionConsumer(JsonWebsocketConsumer):
-    http_user_and_session = True
-    strict_ordering = True
 
-    def connect(self, message, **kwargs):
-        message.reply_channel.send({"accept": True})
+    def connect(self):
+        print('here')
+        self.accept()
 
-
-    def receive(self, content, **kwargs):
-        """
-        Called when a message is received with either text or bytes
-        filled out.
-        """
-        self.connection_context = DjangoChannelConnectionContext(self.message)
+    def receive_json(self, content):
+        print(content)
+        self.connection_context = DjangoChannelConnectionContext(self.send_json, self.close)
         self.subscription_server = DjangoChannelSubscriptionServer(graphene_settings.SCHEMA)
         self.subscription_server.on_open(self.connection_context)
         self.subscription_server.handle(content, self.connection_context)
+
 
 class SubscriptionObserver(Observer):
 
