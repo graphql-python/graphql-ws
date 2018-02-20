@@ -96,11 +96,11 @@ class GraphQLSubscriptionConsumer(JsonWebsocketConsumer):
 
     def connect(self):
         self.accept()
-
-    def receive_json(self, content):
         self.connection_context = DjangoChannelConnectionContext(self.send_json, self.close)
         self.subscription_server = DjangoChannelSubscriptionServer(graphene_settings.SCHEMA)
         self.subscription_server.on_open(self.connection_context)
+
+    def receive_json(self, content):
         self.subscription_server.handle(content, self.connection_context)
 
 
