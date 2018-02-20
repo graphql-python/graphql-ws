@@ -18,11 +18,11 @@ from graphene_django.settings import graphene_settings
 
 class DjangoChannelConnectionContext(BaseConnectionContext):
     
-    def __init__(self, send_json, close, request_context=None):
+    def __init__(self, send_json, close, request_context):
         self.send_json = send_json
         self.close = close
         self.operations = {}
-        self.request_context = None
+        self.request_context = request_context
 
     def send(self, data):
         self.send_json(data)
@@ -32,9 +32,14 @@ class DjangoChannelConnectionContext(BaseConnectionContext):
 
 class DjangoChannelSubscriptionServer(BaseSubscriptionServer):
 
-    def get_graphql_params(self, *args, **kwargs):
-        params = super(DjangoChannelSubscriptionServer,
-                       self).get_graphql_params(*args, **kwargs)
+    def get_graphql_params(self, connection_context, payload):
+        params =  {
+            'request_string': payload.get('query'),
+            'variable_values': payload.get('variables'),
+            'operation_name': payload.get('operationName'),
+            'context_value': connection_context.request_context,
+        }
+
         return dict(params, executor=SyncExecutor())
 
     def handle(self, message, connection_context):
@@ -96,7 +101,7 @@ class GraphQLSubscriptionConsumer(JsonWebsocketConsumer):
 
     def connect(self):
         self.accept()
-        self.connection_context = DjangoChannelConnectionContext(self.send_json, self.close)
+        self.connection_context = DjangoChannelConnectionContext(self.send_json, self.close, self.scope)
         self.subscription_server = DjangoChannelSubscriptionServer(graphene_settings.SCHEMA)
         self.subscription_server.on_open(self.connection_context)
 

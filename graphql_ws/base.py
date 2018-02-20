@@ -80,7 +80,6 @@ class BaseSubscriptionServer(object):
         op_id = parsed_message.get('id')
         op_type = parsed_message.get('type')
         payload = parsed_message.get('payload')
-        print(op_type)
         if op_type == GQL_CONNECTION_INIT:
             return self.on_connection_init(connection_context, op_id, payload)
 
