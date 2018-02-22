@@ -2,9 +2,11 @@ import random
 import asyncio
 import graphene
 
-from graphql_ws.pubsub import AsyncioPubsub
+# from graphql_ws.pubsub import AsyncioPubsub
+from graphql_ws.pubsub import AsyncioRedisPubsub
 
-p = AsyncioPubsub()
+# p = AsyncioPubsub()
+p = AsyncioRedisPubsub()
 
 
 class Query(graphene.ObjectType):
@@ -26,10 +28,14 @@ class Subscription(graphene.ObjectType):
     base_sub = graphene.String()
 
     async def resolve_base_sub(root, info):
-        sub_id, q = p.subscribe('BASE')
-        while True:
-            payload = await q.get()
-            yield payload
+        try:
+            sub_id, q = await p.subscribe_to_channel('BASE')
+            # sub_id, q = p.subscribe_to_channel('BASE')
+            while True:
+                payload = await q.get()
+                yield payload
+        except asyncio.CancelledError:
+            print('Caught SIGINT')
 
     async def resolve_count_seconds(root, info, up_to=5):
         for i in range(up_to):

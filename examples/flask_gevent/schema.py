@@ -2,11 +2,11 @@ import random
 import graphene
 from rx import Observable
 
-# from graphql_ws.pubsub import RxPubsub
-from graphql_ws.pubsub import GeventRedisPubsub
+from graphql_ws.pubsub import GeventRxPubsub
+# from graphql_ws.pubsub import GeventRxRedisPubsub
 
-# p = RxPubsub()
-p = GeventRedisPubsub()
+p = GeventRxPubsub()
+# p = GeventRxRedisPubsub()
 
 
 class Query(graphene.ObjectType):
