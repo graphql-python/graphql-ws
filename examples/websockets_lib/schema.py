@@ -2,11 +2,15 @@ import random
 import asyncio
 import graphene
 
-# from graphql_ws.pubsub import AsyncioPubsub
-from graphql_ws.pubsub import AsyncioRedisPubsub
+from graphql_ws.pubsub import AsyncioPubsub
 
-# p = AsyncioPubsub()
-p = AsyncioRedisPubsub()
+p = AsyncioPubsub()
+
+# TODO:
+# - Add Mutation Type
+# - Breakup into package and two modules
+# - Add explanation on how to use pubsub to readme
+# - Modify author code to peform proper cleanup during cancel()
 
 
 class Query(graphene.ObjectType):
@@ -29,13 +33,13 @@ class Subscription(graphene.ObjectType):
 
     async def resolve_base_sub(root, info):
         try:
-            sub_id, q = await p.subscribe_to_channel('BASE')
-            # sub_id, q = p.subscribe_to_channel('BASE')
+            # sub_id, q = await p.subscribe_to_channel('BASE')
+            sub_id, q = p.subscribe_to_channel('BASE')
             while True:
                 payload = await q.get()
                 yield payload
         except asyncio.CancelledError:
-            print('Caught SIGINT')
+            p.unsubscribe('BASE', sub_id)
 
     async def resolve_count_seconds(root, info, up_to=5):
         for i in range(up_to):

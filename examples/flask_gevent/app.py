@@ -20,7 +20,8 @@ def graphql_view():
 
 
 app.add_url_rule(
-    '/graphql', view_func=GraphQLView.as_view('graphql', schema=schema, graphiql=False))
+    '/graphql', view_func=GraphQLView.as_view('graphql', schema=schema,
+                                              graphiql=False))
 
 subscription_server = GeventSubscriptionServer(schema)
 app.app_protocol = lambda environ_path_info: 'graphql-ws'

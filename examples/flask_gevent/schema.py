@@ -2,11 +2,11 @@ import random
 import graphene
 from rx import Observable
 
-from graphql_ws.pubsub import GeventRxPubsub
-# from graphql_ws.pubsub import GeventRxRedisPubsub
+# from graphql_ws.pubsub import GeventRxPubsub
+from graphql_ws.pubsub import GeventRxRedisPubsub
 
-p = GeventRxPubsub()
-# p = GeventRxRedisPubsub()
+# p = GeventRxPubsub()
+p = GeventRxRedisPubsub()
 
 
 class Query(graphene.ObjectType):
@@ -41,7 +41,8 @@ class Subscription(graphene.ObjectType):
                          .take_while(lambda i: int(i) <= up_to)
 
     def resolve_random_int(root, info):
-        return Observable.interval(1000).map(lambda i: RandomType(seconds=i, random_int=random.randint(0, 500)))
+        return Observable.interval(1000).map(
+            lambda i: RandomType(seconds=i, random_int=random.randint(0, 500)))
 
 
 schema = graphene.Schema(query=Query, subscription=Subscription)

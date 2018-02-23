@@ -81,13 +81,16 @@ class AsyncioRedisPubsub:
             await asyncio.sleep(.001)
 
 
-class ObserversWrapper(object):
+class SubjectObserversWrapper(object):
     def __init__(self, pubsub, channel):
         self.pubsub = pubsub
         self.channel = channel
         self.observers = []
 
         self.lock = config["concurrency"].RLock()
+
+    def __getitem__(self, key):
+        return self.observers[key]
 
     def __getattr__(self, attr):
         return getattr(self.observers, attr)
@@ -113,8 +116,9 @@ class GeventRxPubsub(object):
             return self.subscriptions[channel]
         else:
             subject = Subject()
-            # monkeypatch Subject to cleanup pubsub on subscription cancel()
-            subject.observers = ObserversWrapper(self, channel)
+            # monkeypatch Subject to unsubscribe pubsub on observable
+            # subscription.cancel()
+            subject.observers = SubjectObserversWrapper(self, channel)
             self.subscriptions[channel] = subject
             return subject
 
@@ -141,8 +145,9 @@ class GeventRxRedisPubsub(object):
         else:
             self.pubsub.subscribe(channel)
             subject = Subject()
-            # monkeypatch Subject to cleanup pubsub on subscription cancel()
-            subject.observers = ObserversWrapper(self, channel)
+            # monkeypatch Subject to unsubscribe pubsub on observable
+            # subscription.cancel()
+            subject.observers = SubjectObserversWrapper(self, channel)
             self.subscriptions[channel] = subject
             if not self.greenlet:
                 self.greenlet = gevent.spawn(self._wait_and_get_messages)
