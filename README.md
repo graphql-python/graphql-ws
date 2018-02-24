@@ -75,6 +75,33 @@ def echo_socket(ws):
     subscription_server.handle(ws)
     return []
 ```
+### Django (with channels)
+
+First `pip install channels` and add it to your django apps
+
+Then add the following to your settings.py
+
+```python
+    CHANNELS_WS_PROTOCOLS = ["graphql-ws", ]
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "asgiref.inmemory.ChannelLayer",
+            "ROUTING": "django_subscriptions.urls.channel_routing",
+        },
+
+    }
+```
+
+Add the channel routes to your Django server.
+
+```python
+from channels.routing import route_class
+from graphql_ws.django_channels import GraphQLSubscriptionConsumer
+
+channel_routing = [
+    route_class(GraphQLSubscriptionConsumer, path=r"^/subscriptions"),
+]
+```
 
 ## Publish-Subscribe
 Includes several publish-subscribe (pubsub) classes for hooking
@@ -89,6 +116,8 @@ that utilizes Redis (for production), via the [aredis](https://github.com/NoneGG
 is a asynchronous port of the excellent [redis-py](https://github.com/andymccurdy/redis-py) library.
 
 The schema for asyncio would look something like this below:
+
+### Asyncio
 
 ```python
 import asyncio
@@ -192,23 +221,8 @@ schema = graphene.Schema(mutation=Mutations,
 You can see a full example here: https://github.com/graphql-python/graphql-ws/tree/master/examples/flask_gevent
 
 
-### Django Channels
+### Django (with channels)
 
-
-First `pip install channels` and it to your django apps
-
-Then add the following to your settings.py
-
-```python
-    CHANNELS_WS_PROTOCOLS = ["graphql-ws", ]
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "asgiref.inmemory.ChannelLayer",
-            "ROUTING": "django_subscriptions.urls.channel_routing",
-        },
-
-    }
-```
 
 Setup your graphql schema
 
@@ -253,15 +267,4 @@ Setup your schema in settings.py
 GRAPHENE = {
     'SCHEMA': 'path.to.schema'
 }
-```
-
-and finally add the channel routes
-
-```python
-from channels.routing import route_class
-from graphql_ws.django_channels import GraphQLSubscriptionConsumer
-
-channel_routing = [
-    route_class(GraphQLSubscriptionConsumer, path=r"^/subscriptions"),
-]
 ```

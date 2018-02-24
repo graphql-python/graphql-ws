@@ -6,10 +6,6 @@ from graphql_ws.pubsub import AsyncioPubsub
 
 p = AsyncioPubsub()
 
-# TODO:
-# - Add explanation on how to use pubsub
-# - Modify author code to peform proper cleanup during cancel()
-
 
 class Query(graphene.ObjectType):
     base = graphene.String()
