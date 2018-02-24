@@ -172,7 +172,7 @@ class BaseSubscriptionServer(object):
 
     def execute(self, request_context, params):
         return graphql(
-            self.schema, **dict(params, allow_subscriptions=True))
+            self.schema, **dict(params, context_value=request_context, allow_subscriptions=True))
 
     def handle(self, ws, request_context=None):
         raise NotImplementedError("handle method not implemented")
