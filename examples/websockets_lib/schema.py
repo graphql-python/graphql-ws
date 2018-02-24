@@ -7,18 +7,31 @@ from graphql_ws.pubsub import AsyncioPubsub
 p = AsyncioPubsub()
 
 # TODO:
-# - Add Mutation Type
-# - Breakup into package and two modules
-# - Add explanation on how to use pubsub to readme
+# - Breakup pubsub module into package and two modules
+# - Add explanation on how to use pubsub
 # - Modify author code to peform proper cleanup during cancel()
 
 
 class Query(graphene.ObjectType):
-    base = graphene.String(value=graphene.String())
+    base = graphene.String()
 
-    async def resolve_base(root, info, value='Hello World!'):
-        await p.publish('BASE', value)
-        return value
+    async def resolve_base(root, info):
+        return 'Hello World!'
+
+
+class MutationExample(graphene.Mutation):
+    class Arguments:
+        input_text = graphene.String()
+
+    output_text = graphene.String()
+
+    async def mutate(self, info, input_text):
+        await p.publish('BASE', input_text)
+        return MutationExample(output_text=input_text)
+
+
+class Mutations(graphene.ObjectType):
+    mutation_example = MutationExample.Field()
 
 
 class RandomType(graphene.ObjectType):
@@ -29,9 +42,9 @@ class RandomType(graphene.ObjectType):
 class Subscription(graphene.ObjectType):
     count_seconds = graphene.Float(up_to=graphene.Int())
     random_int = graphene.Field(RandomType)
-    base_sub = graphene.String()
+    mutation_example = graphene.String()
 
-    async def resolve_base_sub(root, info):
+    async def resolve_mutation_example(root, info):
         try:
             # sub_id, q = await p.subscribe_to_channel('BASE')
             sub_id, q = p.subscribe_to_channel('BASE')
@@ -56,4 +69,5 @@ class Subscription(graphene.ObjectType):
             i += 1
 
 
-schema = graphene.Schema(query=Query, subscription=Subscription)
+schema = graphene.Schema(query=Query, mutation=Mutations,
+                         subscription=Subscription)

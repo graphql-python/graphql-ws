@@ -1,20 +1,32 @@
-import random
 import graphene
+import random
+
+from graphql_ws.pubsub import GeventRxPubsub
 from rx import Observable
 
-# from graphql_ws.pubsub import GeventRxPubsub
-from graphql_ws.pubsub import GeventRxRedisPubsub
-
-# p = GeventRxPubsub()
-p = GeventRxRedisPubsub()
+p = GeventRxPubsub()
 
 
 class Query(graphene.ObjectType):
-    base = graphene.String(value=graphene.String())
+    base = graphene.String()
 
-    def resolve_base(root, info, value='Hello World!'):
-        p.publish('BASE', value)
-        return value
+    def resolve_base(root, info):
+        return 'Hello World!'
+
+
+class MutationExample(graphene.Mutation):
+    class Arguments:
+        input_text = graphene.String()
+
+    output_text = graphene.String()
+
+    def mutate(self, info, input_text):
+        p.publish('BASE', input_text)
+        return MutationExample(output_text=input_text)
+
+
+class Mutations(graphene.ObjectType):
+    mutation_example = MutationExample.Field()
 
 
 class RandomType(graphene.ObjectType):
@@ -23,14 +35,11 @@ class RandomType(graphene.ObjectType):
 
 
 class Subscription(graphene.ObjectType):
-
     count_seconds = graphene.Int(up_to=graphene.Int())
-
     random_int = graphene.Field(RandomType)
+    mutation_example = graphene.String()
 
-    base_sub = graphene.String()
-
-    def resolve_base_sub(root, info):
+    def resolve_mutation_example(root, info):
         # subscribe_to_channel method returns an observable
         return p.subscribe_to_channel('BASE')\
                          .map(lambda i: "{0}".format(i))
@@ -45,4 +54,5 @@ class Subscription(graphene.ObjectType):
             lambda i: RandomType(seconds=i, random_int=random.randint(0, 500)))
 
 
-schema = graphene.Schema(query=Query, subscription=Subscription)
+schema = graphene.Schema(query=Query, mutation=Mutations,
+                         subscription=Subscription)
