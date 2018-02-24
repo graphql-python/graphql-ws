@@ -41,12 +41,11 @@ class Subscription(graphene.ObjectType):
 
     async def resolve_mutation_example(root, info):
         try:
-            # sub_id, q = await p.subscribe_to_channel('BASE')
             sub_id, q = p.subscribe_to_channel('BASE')
             while True:
                 payload = await q.get()
                 yield payload
-        except asyncio.CancelledError:
+        finally:
             p.unsubscribe('BASE', sub_id)
 
     async def resolve_count_seconds(root, info, up_to=5):
