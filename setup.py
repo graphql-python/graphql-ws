@@ -15,6 +15,10 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
     'graphql-core>=2.0<3',
+    'aredis',
+    'gevent',
+    'redis',
+    'rx'
     # TODO: put package requirements here
 ]
 
