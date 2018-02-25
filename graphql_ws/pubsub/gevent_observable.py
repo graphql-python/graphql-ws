@@ -43,7 +43,7 @@ class GeventRxPubsub(object):
         else:
             subject = Subject()
             # monkeypatch Subject to unsubscribe pubsub on observable
-            # subscription.cancel()
+            # subscription.dispose()
             subject.observers = SubjectObserversWrapper(self, channel)
             self.subscriptions[channel] = subject
             return subject
@@ -72,7 +72,7 @@ class GeventRxRedisPubsub(object):
             self.pubsub.subscribe(channel)
             subject = Subject()
             # monkeypatch Subject to unsubscribe pubsub on observable
-            # subscription.cancel()
+            # subscription.dispose()
             subject.observers = SubjectObserversWrapper(self, channel)
             self.subscriptions[channel] = subject
             if not self.greenlet:

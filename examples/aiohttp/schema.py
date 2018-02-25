@@ -4,7 +4,7 @@ import graphene
 
 from graphql_ws.pubsub import AsyncioPubsub
 
-p = AsyncioPubsub()
+pubsub = AsyncioPubsub()
 
 
 class Query(graphene.ObjectType):
@@ -21,7 +21,7 @@ class MutationExample(graphene.Mutation):
     output_text = graphene.String()
 
     async def mutate(self, info, input_text):
-        await p.publish('BASE', input_text)
+        await pubsub.publish('BASE', input_text)
         return MutationExample(output_text=input_text)
 
 
@@ -41,12 +41,12 @@ class Subscription(graphene.ObjectType):
 
     async def resolve_mutation_example(root, info):
         try:
-            sub_id, q = p.subscribe_to_channel('BASE')
+            sub_id, q = pubsub.subscribe_to_channel('BASE')
             while True:
                 payload = await q.get()
                 yield payload
         finally:
-            p.unsubscribe('BASE', sub_id)
+            pubsub.unsubscribe('BASE', sub_id)
 
     async def resolve_count_seconds(root, info, up_to=5):
         for i in range(up_to):

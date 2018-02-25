@@ -104,7 +104,7 @@ channel_routing = [
 ```
 
 ## Publish-Subscribe
-Includes several publish-subscribe (pubsub) classes for hooking
+Included are several publish-subscribe (pubsub) classes for hooking
 up your mutations to your subscriptions. When a client makes a
 subscription, the pubsub can be used to map from one subscription name
 to one or more channel names to subscribe to the right channels.
@@ -127,7 +127,7 @@ from graphql_ws.pubsub import AsyncioPubsub
 
 # create a new pubsub object; this class is in-memory and does
 # not utilze Redis
-p = AsyncioPubsub()
+pubsub = AsyncioPubsub()
 
 
 class MutationExample(graphene.Mutation):
@@ -138,7 +138,7 @@ class MutationExample(graphene.Mutation):
 
     async def mutate(self, info, input_text):
         # publish to the pubsub object before returning mutation
-        await p.publish('BASE', input_text)
+        await pubsub.publish('BASE', input_text)
         return MutationExample(output_text=input_text)
 
 
@@ -153,14 +153,14 @@ class Subscription(graphene.ObjectType):
         try:
             # pubsub subscribe_to_channel method returns
             # subscription id and an asyncio.Queue
-            sub_id, q = p.subscribe_to_channel('BASE')
+            sub_id, q = pubsub.subscribe_to_channel('BASE')
             while True:
                 payload = await q.get()
                 yield payload
         except asyncio.CancelledError:
             # unsubscribe subscription id from channel
             # when coroutine is cancelled
-            p.unsubscribe('BASE', sub_id)
+            pubsub.unsubscribe('BASE', sub_id)
 
 schema = graphene.Schema(mutation=Mutations,
                          subscription=Subscription)
@@ -184,7 +184,7 @@ from rx import Observable
 
 # create a new pubsub object; in the case you'll need to
 # be running a redis-server instance in a separate process
-p = GeventRxRedisPubsub()
+pubsub = GeventRxRedisPubsub()
 
 
 class MutationExample(graphene.Mutation):
@@ -195,7 +195,7 @@ class MutationExample(graphene.Mutation):
 
     def mutate(self, info, input_text):
         # publish to the pubsub before returning mutation
-        p.publish('BASE', input_text)
+        pubsub.publish('BASE', input_text)
         return MutationExample(output_text=input_text)
 
 
@@ -208,9 +208,9 @@ class Subscription(graphene.ObjectType):
 
     def resolve_mutation_example(root, info):
         # pubsub subscribe_to_channel method returns an observable
-        # when observable is cancelled, the subscription will
+        # when observable is disposed of, the subscription will
         # be cleaned up and unsubscribed from
-        return p.subscribe_to_channel('BASE')\
+        return pubsub.subscribe_to_channel('BASE')\
                          .map(lambda i: "{0}".format(i))
 
 

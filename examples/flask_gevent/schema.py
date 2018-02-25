@@ -4,7 +4,7 @@ import random
 from graphql_ws.pubsub import GeventRxPubsub
 from rx import Observable
 
-p = GeventRxPubsub()
+pubsub = GeventRxPubsub()
 
 
 class Query(graphene.ObjectType):
@@ -21,7 +21,7 @@ class MutationExample(graphene.Mutation):
     output_text = graphene.String()
 
     def mutate(self, info, input_text):
-        p.publish('BASE', input_text)
+        pubsub.publish('BASE', input_text)
         return MutationExample(output_text=input_text)
 
 
@@ -41,7 +41,7 @@ class Subscription(graphene.ObjectType):
 
     def resolve_mutation_example(root, info):
         # subscribe_to_channel method returns an observable
-        return p.subscribe_to_channel('BASE')\
+        return pubsub.subscribe_to_channel('BASE')\
                          .map(lambda i: "{0}".format(i))
 
     def resolve_count_seconds(root, info, up_to=5):
