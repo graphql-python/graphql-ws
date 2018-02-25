@@ -1,4 +1,4 @@
-from inspect import isawaitable, isasyncgen
+from inspect import isawaitable
 
 from asyncio import ensure_future
 from aiohttp import WSMsgType
