@@ -110,14 +110,15 @@ subscription, the pubsub can be used to map from one subscription name
 to one or more channel names to subscribe to the right channels.
 The subscription query will be re-run every time something is
 published to one of these channels. Using these classes, a
-subscription is just the result of a mutation. There are two
-pubsub classes for asyncio, one that is in-memory and the other
+subscription is just the result of a mutation. 
+
+### Asyncio
+
+There are two pubsub classes for asyncio, one that is in-memory and the other
 that utilizes Redis (for production), via the [aredis](https://github.com/NoneGG/aredis) libary, which
 is a asynchronous port of the excellent [redis-py](https://github.com/andymccurdy/redis-py) library.
 
 The schema for asyncio would look something like this below:
-
-### Asyncio
 
 ```python
 import asyncio
