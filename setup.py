@@ -24,7 +24,7 @@ requirements = [
 ]
 
 if sys.version_info[0] > 2:
-    requirements.append(aredis)
+    requirements.append('aredis')
 
 setup_requirements = [
     'pytest-runner',
