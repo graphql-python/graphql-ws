@@ -3,6 +3,8 @@
 
 """The setup script."""
 
+import sys
+
 from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
@@ -15,8 +17,14 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
     'graphql-core>=2.0<3',
+    'gevent',
+    'redis',
+    'rx'
     # TODO: put package requirements here
 ]
+
+if sys.version_info[0] > 2:
+    requirements.append('aredis')
 
 setup_requirements = [
     'pytest-runner',
