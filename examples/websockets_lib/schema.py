@@ -20,7 +20,7 @@ class MutationExample(graphene.Mutation):
 
     output_text = graphene.String()
 
-    async def mutate(self, info, input_text):
+    async def mutate(root, info, input_text):
         await pubsub.publish('BASE', input_text)
         return MutationExample(output_text=input_text)
 

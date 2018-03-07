@@ -243,8 +243,8 @@ class Subscription(graphene.ObjectType):
 
 
     def resolve_count_seconds(
-        root, 
-        info, 
+        root,
+        info,
         up_to=5
     ):
         return Observable.interval(1000)\
