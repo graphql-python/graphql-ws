@@ -54,7 +54,7 @@ class AiohttpSubscriptionServer(BaseSubscriptionServer):
     async def _handle(self, ws, request_context=None):
         connection_context = AiohttpConnectionContext(ws, request_context)
         await self.on_open(connection_context)
-        pending_tasks = []
+        pending = set()
         while True:
             try:
                 if connection_context.closed:
@@ -63,18 +63,16 @@ class AiohttpSubscriptionServer(BaseSubscriptionServer):
             except ConnectionClosedException:
                 break
             finally:
-                pending_tasks = [t for t in pending_tasks if not t.done()]
+                if pending:
+                    (_, pending) = await wait(pending, timeout=0, loop=self.loop)
 
             task = ensure_future(
                 self.on_message(connection_context, message), loop=self.loop)
-            pending_tasks.append(task)
+            pending.add(task)
 
         self.on_close(connection_context)
-        if pending_tasks:
-            for task in pending_tasks:
-                if not task.done():
-                    task.cancel()
-            await wait(pending_tasks, loop=self.loop)
+        for task in pending:
+            task.cancel()
 
     async def handle(self, ws, request_context=None):
         await shield(self._handle(ws, request_context), loop=self.loop)
