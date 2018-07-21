@@ -38,7 +38,7 @@ class AiohttpConnectionContext(BaseConnectionContext):
         return self.ws.closed
 
     async def close(self, code):
-        await self.ws.close(code)
+        await self.ws.close(code=code)
 
 
 class AiohttpSubscriptionServer(BaseSubscriptionServer):
