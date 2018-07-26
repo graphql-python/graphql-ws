@@ -132,7 +132,6 @@ You can see a full example here: https://github.com/graphql-python/graphql-ws/tr
 
 ### Django Channels
 
-
 First `pip install channels` and it to your django apps
 
 Then add the following to your settings.py
@@ -203,3 +202,81 @@ channel_routing = [
     route_class(GraphQLSubscriptionConsumer, path=r"^/subscriptions"),
 ]
 ```
+
+### Django Channels 2
+
+Set up with Django Channels just takes three steps:
+
+1. Install the apps
+2. Set up schema
+3. Set up channels Router
+
+
+First `pip install channels` and it to your `INSTALLED_APPS`. If you want
+graphiQL, install `graphql_ws.django` app before `graphene_django` to serve a
+graphiql template that will work with websockets:
+
+```python
+INSTALLED_APPS = [
+    "channels",
+    "graphql_ws.django",
+    "graphene_django",
+    # ...
+]
+```
+
+
+Next, set up your graphql schema:
+
+```python
+import graphene
+from rx import Observable
+
+
+class Query(graphene.ObjectType):
+    hello = graphene.String()
+
+    def resolve_hello(self, info, **kwargs):
+        return "world"
+
+
+class Subscription(graphene.ObjectType):
+
+    count_seconds = graphene.Int(up_to=graphene.Int())
+
+    def resolve_count_seconds(root, info, up_to=5):
+        return (
+            Observable.interval(1000)
+            .map(lambda i: "{0}".format(i))
+            .take_while(lambda i: int(i) <= up_to)
+        )
+
+
+schema = graphene.Schema(query=Query, subscription=Subscription)
+```
+
+...and point to your schema in Django settings
+```python
+GRAPHENE = {
+    'SCHEMA': 'yourproject.schema'
+}
+```
+
+
+Finally, configure channels routing (it'll be served from `/subscriptions`):
+
+```python
+from channels.routing import ProtocolTypeRouter, URLRouter
+from graphql_ws.django.graphql_channels import (
+    websocket_urlpatterns as graphql_urlpatterns
+)
+
+application = ProtocolTypeRouter({"websocket": URLRouter(graphql_urlpatterns)})
+```
+
+...and point to the application in Django settings
+```python
+ASGI_APPLICATION = 'yourproject.schema'
+```
+
+Run `./manage.py runserver` and go to `http://localhost:8000/graphql` to test!
