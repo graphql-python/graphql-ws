@@ -1,11 +1,29 @@
 from asgiref.sync import async_to_sync
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from graphene_django.settings import graphene_settings
 from graphql.execution.executors.asyncio import AsyncioExecutor
-from django.urls import path
 from rx import Observer, Observable
 from ..base import BaseConnectionContext, BaseSubscriptionServer
-from ..constants import GQL_CONNECTION_ACK, GQL_CONNECTION_ERROR, WS_PROTOCOL
+from ..constants import GQL_CONNECTION_ACK, GQL_CONNECTION_ERROR
+
+
+class SubscriptionObserver(Observer):
+    def __init__(
+        self, connection_context, op_id, send_execution_result, send_error, on_close
+    ):
+        self.connection_context = connection_context
+        self.op_id = op_id
+        self.send_execution_result = send_execution_result
+        self.send_error = send_error
+        self.on_close = on_close
+
+    def on_next(self, value):
+        self.send_execution_result(self.connection_context, self.op_id, value)
+
+    def on_completed(self):
+        self.on_close(self.connection_context)
+
+    def on_error(self, error):
+        self.send_error(self.connection_context, self.op_id, error)
 
 
 class ChannelsConnectionContext(BaseConnectionContext):
@@ -87,43 +105,3 @@ class ChannelsSubscriptionServer(BaseSubscriptionServer):
 
 
 subscription_server = ChannelsSubscriptionServer(schema=graphene_settings.SCHEMA)
-
-
-class GraphQLSubscriptionConsumer(AsyncJsonWebsocketConsumer):
-    async def connect(self):
-        self.connection_context = None
-        if WS_PROTOCOL in self.scope["subprotocols"]:
-            self.connection_context = await subscription_server.handle(self, self.scope)
-            await self.accept(subprotocol=WS_PROTOCOL)
-        else:
-            await self.close()
-
-    async def disconnect(self, code):
-        if self.connection_context:
-            await subscription_server.on_close(self.connection_context)
-
-    async def receive_json(self, content):
-        await subscription_server.on_message(self.connection_context, content)
-
-
-class SubscriptionObserver(Observer):
-    def __init__(
-        self, connection_context, op_id, send_execution_result, send_error, on_close
-    ):
-        self.connection_context = connection_context
-        self.op_id = op_id
-        self.send_execution_result = send_execution_result
-        self.send_error = send_error
-        self.on_close = on_close
-
-    def on_next(self, value):
-        self.send_execution_result(self.connection_context, self.op_id, value)
-
-    def on_completed(self):
-        self.on_close(self.connection_context)
-
-    def on_error(self, error):
-        self.send_error(self.connection_context, self.op_id, error)
-
-
-websocket_urlpatterns = [path("subscriptions", GraphQLSubscriptionConsumer)]
