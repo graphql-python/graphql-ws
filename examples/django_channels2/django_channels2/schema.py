@@ -10,7 +10,6 @@ class Query(graphene.ObjectType):
 
 
 class Subscription(graphene.ObjectType):
-
     count_seconds = graphene.Int(up_to=graphene.Int())
 
     def resolve_count_seconds(root, info, up_to=5):

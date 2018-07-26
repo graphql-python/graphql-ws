@@ -208,13 +208,13 @@ channel_routing = [
 Set up with Django Channels just takes three steps:
 
 1. Install the apps
-2. Set up schema
-3. Set up channels Router
+2. Set up your schema
+3. Configure the channels router application
 
 
 First `pip install channels` and it to your `INSTALLED_APPS`. If you want
-graphiQL, install `graphql_ws.django` app before `graphene_django` to serve a
-graphiql template that will work with websockets:
+graphiQL, install the `graphql_ws.django` app before `graphene_django` to serve
+a graphiQL template that will work with websockets:
 
 ```python
 INSTALLED_APPS = [
@@ -263,20 +263,14 @@ GRAPHENE = {
 ```
 
 
-Finally, configure channels routing (it'll be served from `/subscriptions`):
+Finally, you can set up channels routing yourself (maybe using
+`graphql_ws.django.routing.websocket_urlpatterns` in your `URLRouter`), or you
+can just use one of the preset channels applications:
 
 ```python
-from channels.routing import ProtocolTypeRouter, URLRouter
-from graphql_ws.django.graphql_channels import (
-    websocket_urlpatterns as graphql_urlpatterns
-)
-
-application = ProtocolTypeRouter({"websocket": URLRouter(graphql_urlpatterns)})
-```
-
-...and point to the application in Django settings
-```python
-ASGI_APPLICATION = 'yourproject.schema'
+ASGI_APPLICATION = 'graphql_ws.django.routing.application'
+# or
+ASGI_APPLICATION = 'graphql_ws.django.routing.auth_application'
 ```
 
 Run `./manage.py runserver` and go to `http://localhost:8000/graphql` to test!

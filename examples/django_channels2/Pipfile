@@ -7,7 +7,7 @@ name = "pypi"
 
 [packages]
 graphql-ws = {path = "./../..", editable = true}
-channels = "*"
+channels = "==2.*"
 graphene-django = "*"
 
 [requires]
