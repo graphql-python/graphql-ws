@@ -26,4 +26,5 @@ ROOT_URLCONF = "django_channels2.urls"
 ASGI_APPLICATION = "graphql_ws.django.routing.application"
 
 
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 GRAPHENE = {"MIDDLEWARE": [], "SCHEMA": "django_channels2.schema.schema"}

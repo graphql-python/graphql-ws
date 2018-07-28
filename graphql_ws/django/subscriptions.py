@@ -1,9 +1,12 @@
-from asgiref.sync import async_to_sync
+from inspect import isawaitable
 from graphene_django.settings import graphene_settings
 from graphql.execution.executors.asyncio import AsyncioExecutor
-from rx import Observer, Observable
+from rx import Observer
 from ..base import BaseConnectionContext, BaseSubscriptionServer
-from ..constants import GQL_CONNECTION_ACK, GQL_CONNECTION_ERROR
+from ..constants import GQL_CONNECTION_ACK, GQL_CONNECTION_ERROR, GQL_COMPLETE
+from ..observable_aiter import setup_observable_extension
+
+setup_observable_extension()
 
 
 class SubscriptionObserver(Observer):
@@ -76,24 +79,25 @@ class ChannelsSubscriptionServer(BaseSubscriptionServer):
             await connection_context.close(1011)
 
     async def on_start(self, connection_context, op_id, params):
-        try:
-            execution_result = await self.execute(
-                connection_context.request_context, params
+        execution_result = self.execute(connection_context.request_context, params)
+
+        if isawaitable(execution_result):
+            execution_result = await execution_result
+
+        if not hasattr(execution_result, "__aiter__"):
+            await self.send_execution_result(
+                connection_context, op_id, execution_result
             )
-            assert isinstance(
-                execution_result, Observable
-            ), "A subscription must return an observable"
-            execution_result.subscribe(
-                SubscriptionObserver(
-                    connection_context,
-                    op_id,
-                    async_to_sync(self.send_execution_result),
-                    async_to_sync(self.send_error),
-                    async_to_sync(self.on_close),
+        else:
+            iterator = await execution_result.__aiter__()
+            connection_context.register_operation(op_id, iterator)
+            async for single_result in iterator:
+                if not connection_context.has_operation(op_id):
+                    break
+                await self.send_execution_result(
+                    connection_context, op_id, single_result
                 )
-            )
-        except Exception as e:
-            self.send_error(connection_context, op_id, str(e))
+            await self.send_message(connection_context, op_id, GQL_COMPLETE)
 
     async def on_close(self, connection_context):
         remove_operations = list(connection_context.operations.keys())
