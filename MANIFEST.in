@@ -4,6 +4,9 @@ include HISTORY.rst
 include LICENSE
 include README.rst
 
+graft graphql_ws/django/templates
+graft examples
+prune examples/django_channels2/.cache
 recursive-include tests *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
