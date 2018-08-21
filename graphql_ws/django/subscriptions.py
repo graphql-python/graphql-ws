@@ -1,3 +1,4 @@
+from asyncio import ensure_future
 from inspect import isawaitable
 from graphene_django.settings import graphene_settings
 from graphql.execution.executors.asyncio import AsyncioExecutor
@@ -68,16 +69,21 @@ class ChannelsSubscriptionServer(BaseSubscriptionServer):
             await self.send_execution_result(
                 connection_context, op_id, execution_result
             )
-        else:
-            iterator = await execution_result.__aiter__()
-            connection_context.register_operation(op_id, iterator)
-            async for single_result in iterator:
-                if not connection_context.has_operation(op_id):
-                    break
-                await self.send_execution_result(
-                    connection_context, op_id, single_result
-                )
             await self.send_message(connection_context, op_id, GQL_COMPLETE)
+            return
+
+        iterator = await execution_result.__aiter__()
+        ensure_future(self.run_op(connection_context, op_id, iterator))
+
+    async def run_op(self, connection_context, op_id, iterator):
+        connection_context.register_operation(op_id, iterator)
+        async for single_result in iterator:
+            if not connection_context.has_operation(op_id):
+                break
+            await self.send_execution_result(
+                connection_context, op_id, single_result
+            )
+        await self.send_message(connection_context, op_id, GQL_COMPLETE)
 
     async def on_close(self, connection_context):
         remove_operations = list(connection_context.operations.keys())

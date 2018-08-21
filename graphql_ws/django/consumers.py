@@ -7,7 +7,8 @@ class GraphQLSubscriptionConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.connection_context = None
         if WS_PROTOCOL in self.scope["subprotocols"]:
-            self.connection_context = await subscription_server.handle(self, self.scope)
+            self.connection_context = await subscription_server.handle(
+                ws=self, request_context=self.scope)
             await self.accept(subprotocol=WS_PROTOCOL)
         else:
             await self.close()
