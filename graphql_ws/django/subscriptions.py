@@ -1,7 +1,6 @@
 from inspect import isawaitable
 from graphene_django.settings import graphene_settings
 from graphql.execution.executors.asyncio import AsyncioExecutor
-from rx import Observer
 from ..base import BaseConnectionContext, BaseSubscriptionServer
 from ..constants import GQL_CONNECTION_ACK, GQL_CONNECTION_ERROR, GQL_COMPLETE
 from ..observable_aiter import setup_observable_extension
@@ -9,27 +8,8 @@ from ..observable_aiter import setup_observable_extension
 setup_observable_extension()
 
 
-class SubscriptionObserver(Observer):
-    def __init__(
-        self, connection_context, op_id, send_execution_result, send_error, on_close
-    ):
-        self.connection_context = connection_context
-        self.op_id = op_id
-        self.send_execution_result = send_execution_result
-        self.send_error = send_error
-        self.on_close = on_close
-
-    def on_next(self, value):
-        self.send_execution_result(self.connection_context, self.op_id, value)
-
-    def on_completed(self):
-        self.on_close(self.connection_context)
-
-    def on_error(self, error):
-        self.send_error(self.connection_context, self.op_id, error)
-
-
 class ChannelsConnectionContext(BaseConnectionContext):
+
     async def send(self, data):
         await self.ws.send_json(data)
 
