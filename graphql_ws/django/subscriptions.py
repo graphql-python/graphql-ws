@@ -1,4 +1,4 @@
-from asyncio import ensure_future
+import asyncio
 from inspect import isawaitable
 from graphene_django.settings import graphene_settings
 from graphql.execution.executors.asyncio import AsyncioExecutor
@@ -10,7 +10,6 @@ setup_observable_extension()
 
 
 class ChannelsConnectionContext(BaseConnectionContext):
-
     async def send(self, data):
         await self.ws.send_json(data)
 
@@ -73,25 +72,38 @@ class ChannelsSubscriptionServer(BaseSubscriptionServer):
             return
 
         iterator = await execution_result.__aiter__()
-        ensure_future(self.run_op(connection_context, op_id, iterator))
+        task = asyncio.ensure_future(self.run_op(connection_context, op_id, iterator))
+        connection_context.register_operation(op_id, task)
 
     async def run_op(self, connection_context, op_id, iterator):
-        connection_context.register_operation(op_id, iterator)
         async for single_result in iterator:
             if not connection_context.has_operation(op_id):
                 break
-            await self.send_execution_result(
-                connection_context, op_id, single_result
-            )
+            await self.send_execution_result(connection_context, op_id, single_result)
         await self.send_message(connection_context, op_id, GQL_COMPLETE)
 
     async def on_close(self, connection_context):
         remove_operations = list(connection_context.operations.keys())
+        cancelled_tasks = []
         for op_id in remove_operations:
-            self.unsubscribe(connection_context, op_id)
+            task = await self.unsubscribe(connection_context, op_id)
+            if task:
+                cancelled_tasks.append(task)
+        # Wait around for all the tasks to actually cancel.
+        await asyncio.gather(*cancelled_tasks, return_exceptions=True)
 
     async def on_stop(self, connection_context, op_id):
-        self.unsubscribe(connection_context, op_id)
+        task = await self.unsubscribe(connection_context, op_id)
+        await asyncio.gather(task, return_exceptions=True)
+
+    async def unsubscribe(self, connection_context, op_id):
+        op = None
+        if connection_context.has_operation(op_id):
+            op = connection_context.get_operation(op_id)
+            op.cancel()
+            connection_context.remove_operation(op_id)
+        self.on_operation_complete(connection_context, op_id)
+        return op
 
 
 subscription_server = ChannelsSubscriptionServer(schema=graphene_settings.SCHEMA)
