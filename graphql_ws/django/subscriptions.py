@@ -68,7 +68,7 @@ class ChannelsSubscriptionServer(BaseSubscriptionServer):
             await self.send_execution_result(
                 connection_context, op_id, execution_result
             )
-            await self.send_message(connection_context, op_id, GQL_COMPLETE)
+            await self.on_operation_complete(connection_context, op_id)
             return
 
         iterator = await execution_result.__aiter__()
@@ -80,7 +80,7 @@ class ChannelsSubscriptionServer(BaseSubscriptionServer):
             if not connection_context.has_operation(op_id):
                 break
             await self.send_execution_result(connection_context, op_id, single_result)
-        await self.send_message(connection_context, op_id, GQL_COMPLETE)
+        await self.on_operation_complete(connection_context, op_id)
 
     async def on_close(self, connection_context):
         remove_operations = list(connection_context.operations.keys())
@@ -90,11 +90,11 @@ class ChannelsSubscriptionServer(BaseSubscriptionServer):
             if task:
                 cancelled_tasks.append(task)
         # Wait around for all the tasks to actually cancel.
-        await asyncio.gather(*cancelled_tasks, return_exceptions=True)
+        await asyncio.wait(cancelled_tasks)
 
     async def on_stop(self, connection_context, op_id):
         task = await self.unsubscribe(connection_context, op_id)
-        await asyncio.gather(task, return_exceptions=True)
+        await asyncio.wait([task])
 
     async def unsubscribe(self, connection_context, op_id):
         op = None
@@ -102,8 +102,11 @@ class ChannelsSubscriptionServer(BaseSubscriptionServer):
             op = connection_context.get_operation(op_id)
             op.cancel()
             connection_context.remove_operation(op_id)
-        self.on_operation_complete(connection_context, op_id)
+        await self.on_operation_complete(connection_context, op_id)
         return op
+
+    async def on_operation_complete(self, connection_context, op_id):
+        await self.send_message(connection_context, op_id, GQL_COMPLETE)
 
 
 subscription_server = ChannelsSubscriptionServer(schema=graphene_settings.SCHEMA)
