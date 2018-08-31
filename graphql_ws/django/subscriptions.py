@@ -83,18 +83,20 @@ class ChannelsSubscriptionServer(BaseSubscriptionServer):
         await self.on_operation_complete(connection_context, op_id)
 
     async def on_close(self, connection_context):
-        remove_operations = list(connection_context.operations.keys())
-        cancelled_tasks = []
-        for op_id in remove_operations:
-            task = await self.unsubscribe(connection_context, op_id)
-            if task:
-                cancelled_tasks.append(task)
+        # Unsubscribe from all the connection's current operations in parallel.
+        unsubscribes = [
+            self.unsubscribe(connection_context, op_id)
+            for op_id in connection_context.operations
+        ]
+        cancelled_tasks = [task for task in await asyncio.gather(*unsubscribes) if task]
         # Wait around for all the tasks to actually cancel.
-        await asyncio.wait(cancelled_tasks)
+        if cancelled_tasks:
+            await asyncio.wait(cancelled_tasks)
 
     async def on_stop(self, connection_context, op_id):
         task = await self.unsubscribe(connection_context, op_id)
-        await asyncio.wait([task])
+        if task:
+            await asyncio.wait([task])
 
     async def unsubscribe(self, connection_context, op_id):
         op = None
