@@ -71,12 +71,13 @@ class ChannelsSubscriptionServer(BaseSubscriptionServer):
             await self.on_operation_complete(connection_context, op_id)
             return
 
-        iterator = await execution_result.__aiter__()
-        task = asyncio.ensure_future(self.run_op(connection_context, op_id, iterator))
+        task = asyncio.ensure_future(
+            self.run_op(connection_context, op_id, execution_result)
+        )
         connection_context.register_operation(op_id, task)
 
-    async def run_op(self, connection_context, op_id, iterator):
-        async for single_result in iterator:
+    async def run_op(self, connection_context, op_id, aiterable):
+        async for single_result in aiterable:
             if not connection_context.has_operation(op_id):
                 break
             await self.send_execution_result(connection_context, op_id, single_result)
