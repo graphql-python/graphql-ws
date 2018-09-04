@@ -1,4 +1,3 @@
-import asyncio
 from inspect import isawaitable
 from graphene_django.settings import graphene_settings
 from graphql.execution.executors.asyncio import AsyncioExecutor
@@ -64,49 +63,34 @@ class ChannelsSubscriptionServer(BaseSubscriptionServer):
         if isawaitable(execution_result):
             execution_result = await execution_result
 
-        if not hasattr(execution_result, "__aiter__"):
+        if hasattr(execution_result, "__aiter__"):
+            iterator = await execution_result.__aiter__()
+            connection_context.register_operation(op_id, iterator)
+            async for single_result in iterator:
+                if not connection_context.has_operation(op_id):
+                    break
+                await self.send_execution_result(
+                    connection_context, op_id, single_result
+                )
+        else:
             await self.send_execution_result(
                 connection_context, op_id, execution_result
             )
-            await self.on_operation_complete(connection_context, op_id)
-            return
-
-        task = asyncio.ensure_future(
-            self.run_op(connection_context, op_id, execution_result)
-        )
-        connection_context.register_operation(op_id, task)
-
-    async def run_op(self, connection_context, op_id, aiterable):
-        async for single_result in aiterable:
-            if not connection_context.has_operation(op_id):
-                break
-            await self.send_execution_result(connection_context, op_id, single_result)
         await self.on_operation_complete(connection_context, op_id)
 
     async def on_close(self, connection_context):
-        # Unsubscribe from all the connection's current operations in parallel.
-        unsubscribes = [
+        for op_id in connection_context.operations:
             self.unsubscribe(connection_context, op_id)
-            for op_id in connection_context.operations
-        ]
-        cancelled_tasks = [task for task in await asyncio.gather(*unsubscribes) if task]
-        # Wait around for all the tasks to actually cancel.
-        if cancelled_tasks:
-            await asyncio.wait(cancelled_tasks)
 
     async def on_stop(self, connection_context, op_id):
-        task = await self.unsubscribe(connection_context, op_id)
-        if task:
-            await asyncio.wait([task])
+        await self.unsubscribe(connection_context, op_id)
 
     async def unsubscribe(self, connection_context, op_id):
-        op = None
         if connection_context.has_operation(op_id):
             op = connection_context.get_operation(op_id)
-            op.cancel()
+            op.dispose()
             connection_context.remove_operation(op_id)
         await self.on_operation_complete(connection_context, op_id)
-        return op
 
     async def on_operation_complete(self, connection_context, op_id):
         await self.send_message(connection_context, op_id, GQL_COMPLETE)
