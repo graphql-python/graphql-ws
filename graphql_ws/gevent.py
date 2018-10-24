@@ -12,7 +12,8 @@ from .base import (
 )
 from .constants import (
     GQL_CONNECTION_ACK,
-    GQL_CONNECTION_ERROR
+    GQL_CONNECTION_ERROR,
+    GQL_COMPLETE,
 )
 
 
@@ -86,7 +87,7 @@ class GeventSubscriptionServer(BaseSubscriptionServer):
                 op_id,
                 self.send_execution_result,
                 self.send_error,
-                self.on_close
+                self.on_complete
             ))
             connection_context.register_operation(op_id, disposable)
         except Exception as e:
@@ -95,21 +96,24 @@ class GeventSubscriptionServer(BaseSubscriptionServer):
     def on_stop(self, connection_context, op_id):
         self.unsubscribe(connection_context, op_id)
 
+    def on_complete(self, connection_context, op_id):
+        self.send_message(connection_context, op_id, GQL_COMPLETE)
+
 
 class SubscriptionObserver(Observer):
 
-    def __init__(self, connection_context, op_id, send_execution_result, send_error, on_close):
+    def __init__(self, connection_context, op_id, send_execution_result, send_error, on_complete):
         self.connection_context = connection_context
         self.op_id = op_id
         self.send_execution_result = send_execution_result
         self.send_error = send_error
-        self.on_close = on_close
+        self.on_complete = on_complete
 
     def on_next(self, value):
         self.send_execution_result(self.connection_context, self.op_id, value)
 
     def on_completed(self):
-        self.on_close(self.connection_context)
+        self.on_complete(self.connection_context, self.op_id)
 
     def on_error(self, error):
         self.send_error(self.connection_context, self.op_id, error)
