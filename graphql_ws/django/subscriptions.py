@@ -1,3 +1,4 @@
+import asyncio
 from inspect import isawaitable
 from graphene_django.settings import graphene_settings
 from graphql.execution.executors.asyncio import AsyncioExecutor
@@ -79,8 +80,12 @@ class ChannelsSubscriptionServer(BaseSubscriptionServer):
         await self.on_operation_complete(connection_context, op_id)
 
     async def on_close(self, connection_context):
-        for op_id in connection_context.operations:
+        unsubscribes = [
             self.unsubscribe(connection_context, op_id)
+            for op_id in connection_context.operations
+        ]
+        if unsubscribes:
+            await asyncio.wait(unsubscribes)
 
     async def on_stop(self, connection_context, op_id):
         await self.unsubscribe(connection_context, op_id)
