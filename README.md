@@ -167,8 +167,8 @@ class Subscription(graphene.ObjectType):
 
 
     def resolve_count_seconds(
-        root, 
-        info, 
+        root,
+        info,
         up_to=5
     ):
         return Observable.interval(1000)\
@@ -202,4 +202,36 @@ from graphql_ws.django_channels import GraphQLSubscriptionConsumer
 channel_routing = [
     route_class(GraphQLSubscriptionConsumer, path=r"^/subscriptions"),
 ]
+```
+
+### Tornado
+```python
+from asyncio import Queue
+from tornado import web, ioloop, websocket
+
+from graphql_ws.tornado import TornadoSubscriptionServer
+
+
+subscription_server = TornadoSubscriptionServer(schema)
+
+
+class SubscriptionHandler(websocket.WebSocketHandler):
+    def initialize(self, sub_server):
+        self.subscription_server = subscription_server
+        self.queue = Queue()
+
+    def select_subprotocol(self, subprotocols):
+        return 'graphql-ws'
+
+    def open(self):
+        ioloop.IOLoop.current().spawn_callback(subscription_server.handle, self)
+
+    async def on_message(self, message):
+        await self.queue.put(message)
+
+    async def recv(self):
+        return await self.queue.get()
+
+app = web.Application([(r"/subscriptions", SubscriptionHandler)]).listen(8000)
+ioloop.IOLoop.current().start()
 ```
