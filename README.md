@@ -3,9 +3,11 @@
 Websocket server for GraphQL subscriptions.
 
 Currently supports:
-* [aiohttp](https://github.com/graphql-python/graphql-ws#aiohttp)
-* [Gevent](https://github.com/graphql-python/graphql-ws#gevent)
-* Sanic (uses [websockets](https://github.com/aaugustin/websockets/) library)
+* aiohttp
+* Gevent
+* [websockets](https://github.com/aaugustin/websockets/) library (Sanic, etc.)
+* Django Channels
+* [ASGI](https://asgi.readthedocs.io/en/latest/) interface (Starlette, Responder, etc.)
 
 # Installation instructions
 
@@ -41,7 +43,7 @@ app.router.add_get('/subscriptions', subscriptions)
 web.run_app(app, port=8000)
 ```
 
-### Sanic
+### websockets library (Sanic, etc.)
 
 Works with any framework that uses the websockets library for
 it's websocket implementation. For this example, plug in
@@ -89,6 +91,32 @@ schema = graphene.Schema(query=Query, subscription=Subscription)
 ```
 
 You can see a full example here: https://github.com/graphql-python/graphql-ws/tree/master/examples/aiohttp
+
+
+### ASGI (Starlette, Responder, etc.)
+
+Works with any framework that uses ASGI for its interface.
+For this example, plug into your Starlette server.
+
+
+```python
+from graphql_ws.asgi import AsgiSubscriptionServer
+from starlette.requests import HTTPConnection
+
+class SubscriptionApp:
+    def __init__(self, schema):
+        self.server = AsgiSubscriptionServer(schema=schema)
+
+    def __call__(self, scope):
+        async def asgi(receive, send):
+            request_context = HTTPConnection(scope)
+            await self.server.handle(scope, receive, send, request_context)
+
+        return asgi
+
+app = Starlette()
+app.add_websocket_route('/subscriptions', SubscriptionApp(schema))
+```
 
 ### Gevent
 
