@@ -9,13 +9,16 @@ from .subscriptions import subscription_server
 
 
 class JSONPromiseEncoder(json.JSONEncoder):
+    def encode(self, *args, **kwargs):
+        self.pending_promises = []
+        return super(JSONPromiseEncoder, self).encode(*args, **kwargs)
+
     def default(self, o):
         if isinstance(o, Promise):
+            if o.is_pending:
+                self.pending_promises.append(o)
             return o.value
         return super(JSONPromiseEncoder, self).default(o)
-
-
-json_promise_encoder = JSONPromiseEncoder()
 
 
 class GraphQLSubscriptionConsumer(AsyncJsonWebsocketConsumer):
@@ -40,4 +43,10 @@ class GraphQLSubscriptionConsumer(AsyncJsonWebsocketConsumer):
 
     @classmethod
     async def encode_json(cls, content):
-        return json_promise_encoder.encode(content)
+        json_promise_encoder = JSONPromiseEncoder()
+        e = json_promise_encoder.encode(content)
+        while json_promise_encoder.pending_promises:
+            # Wait for pending promises to complete, then try encoding again.
+            await asyncio.wait(json_promise_encoder.pending_promises)
+            e = json_promise_encoder.encode(content)
+        return e
