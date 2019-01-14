@@ -117,7 +117,7 @@ def render_graphiql():
   </script>
 </body>
 </html>''').substitute(
-        GRAPHIQL_VERSION='0.11.7',
+        GRAPHIQL_VERSION='0.12.0',
         SUBSCRIPTIONS_TRANSPORT_VERSION='0.7.0',
         subscriptionsEndpoint='ws://localhost:5000/subscriptions',
         # subscriptionsEndpoint='ws://localhost:5000/',
