@@ -1,4 +1,4 @@
-from channels.generic.websockets import JsonWebsocketConsumer
+from channels.generic.websocket import JsonWebsocketConsumer
 from .base import BaseConnectionContext
 import json
 from graphql.execution.executors.sync import SyncExecutor
