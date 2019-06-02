@@ -61,7 +61,7 @@ target/
 # pyenv python configuration file
 .python-version
 .DS_Store
-
+.idea
 .mypy_cache/
 .vscode/
 

@@ -6,6 +6,7 @@ Development Lead
 ----------------
 
 * Syrus Akbary <me@syrusakbary.com>
+* Chris Z @Cito
 
 Contributors
 ------------

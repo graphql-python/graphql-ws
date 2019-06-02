@@ -6,3 +6,7 @@ History
 ------------------
 
 * First release on PyPI.
+
+next (2019)
+------------------
+* Compatibility with graphene 3.0
