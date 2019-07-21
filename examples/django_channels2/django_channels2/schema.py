@@ -1,7 +1,8 @@
+import asyncio
+
 import graphene
-from rx import Observable
-from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 channel_layer = get_channel_layer()
 
@@ -32,12 +33,12 @@ class Subscription(graphene.ObjectType):
     count_seconds = graphene.Int(up_to=graphene.Int())
     new_message = graphene.String()
 
-    def resolve_count_seconds(self, info, up_to=5):
-        return (
-            Observable.interval(1000)
-            .map(lambda i: "{0}".format(i))
-            .take_while(lambda i: int(i) <= up_to)
-        )
+    async def resolve_count_seconds(self, info, up_to=5):
+        i = 1
+        while i <= up_to:
+            yield str(i)
+            await asyncio.sleep(1)
+            i += 1
 
     async def resolve_new_message(self, info):
         channel_name = await channel_layer.new_channel()
