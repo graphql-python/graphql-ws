@@ -21,6 +21,9 @@ TEMPLATES = [
     }
 ]
 
+MIDDLEWARE = [
+    'django.middleware.common.CommonMiddleware',
+]
 
 ROOT_URLCONF = "django_channels2.urls"
 ASGI_APPLICATION = "graphql_ws.django.routing.application"
