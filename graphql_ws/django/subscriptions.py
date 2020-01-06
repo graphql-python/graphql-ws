@@ -11,6 +11,8 @@ setup_observable_extension()
 
 class ChannelsConnectionContext(BaseConnectionContext):
     async def send(self, data):
+        if self.closed:
+            return
         await self.ws.send_json(data)
 
     async def close(self, code):
