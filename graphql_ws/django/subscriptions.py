@@ -15,6 +15,10 @@ class ChannelsConnectionContext(BaseConnectionContext):
             return
         await self.ws.send_json(data)
 
+    @property
+    def closed(self):
+        return self.ws.closed
+
     async def close(self, code):
         await self.ws.close(code=code)
 
