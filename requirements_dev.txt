@@ -11,4 +11,4 @@ pytest-runner==2.11.1
 gevent
 graphene>=2.0
 django
-channels
+channels<2
