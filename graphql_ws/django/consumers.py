@@ -34,7 +34,7 @@ class GraphQLSubscriptionConsumer(AsyncJsonWebsocketConsumer):
 
     async def disconnect(self, code):
         if self.connection_context:
-            self.connection_context.closed = True
+            self.connection_context.socket_closed = True
             await subscription_server.on_close(self.connection_context)
 
     async def receive_json(self, content):
