@@ -1,10 +1,11 @@
-from inspect import isawaitable, isasyncgen
+from inspect import isawaitable
 from asyncio import ensure_future, wait, shield
 
 from aiohttp import WSMsgType
 from graphql.execution.executors.asyncio import AsyncioExecutor
 
-from .base import ConnectionClosedException, BaseConnectionContext, BaseSubscriptionServer
+from .base import (
+    ConnectionClosedException, BaseConnectionContext, BaseSubscriptionServer)
 from .observable_aiter import setup_observable_extension
 
 from .constants import (
@@ -49,7 +50,8 @@ class AiohttpSubscriptionServer(BaseSubscriptionServer):
     def get_graphql_params(self, *args, **kwargs):
         params = super(AiohttpSubscriptionServer,
                        self).get_graphql_params(*args, **kwargs)
-        return dict(params, return_promise=True, executor=AsyncioExecutor(loop=self.loop))
+        return dict(params, return_promise=True,
+                    executor=AsyncioExecutor(loop=self.loop))
 
     async def _handle(self, ws, request_context=None):
         connection_context = AiohttpConnectionContext(ws, request_context)
@@ -104,14 +106,16 @@ class AiohttpSubscriptionServer(BaseSubscriptionServer):
             execution_result = await execution_result
 
         if not hasattr(execution_result, '__aiter__'):
-            await self.send_execution_result(connection_context, op_id, execution_result)
+            await self.send_execution_result(
+                connection_context, op_id, execution_result)
         else:
             iterator = await execution_result.__aiter__()
             connection_context.register_operation(op_id, iterator)
             async for single_result in iterator:
                 if not connection_context.has_operation(op_id):
                     break
-                await self.send_execution_result(connection_context, op_id, single_result)
+                await self.send_execution_result(
+                    connection_context, op_id, single_result)
             await self.send_message(connection_context, op_id, GQL_COMPLETE)
 
     async def on_stop(self, connection_context, op_id):

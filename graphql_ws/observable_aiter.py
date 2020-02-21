@@ -1,5 +1,5 @@
+from asyncio import Future
 
-from asyncio import Future, get_event_loop
 from rx.internal import extensionmethod
 from rx.core import Observable
 

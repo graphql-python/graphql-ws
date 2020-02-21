@@ -2,14 +2,12 @@ import json
 from collections import OrderedDict
 
 from graphql import graphql, format_error
-from graphql.execution import ExecutionResult
 
 from .constants import (
     GQL_CONNECTION_INIT,
     GQL_CONNECTION_TERMINATE,
     GQL_START,
     GQL_STOP,
-    GQL_COMPLETE,
     GQL_ERROR,
     GQL_CONNECTION_ERROR,
     GQL_DATA
@@ -93,7 +91,8 @@ class BaseSubscriptionServer(object):
             params = self.get_graphql_params(connection_context, payload)
             if not isinstance(params, dict):
                 error = Exception(
-                    "Invalid params returned from get_graphql_params! return values must be a dict.")
+                    "Invalid params returned from get_graphql_params!"
+                    " Return values must be a dict.")
                 return self.send_error(connection_context, op_id, error)
 
             # If we already have a subscription with this id, unsubscribe from
@@ -107,8 +106,8 @@ class BaseSubscriptionServer(object):
             return self.on_stop(connection_context, op_id)
 
         else:
-            return self.send_error(connection_context, op_id,
-                                   Exception('Invalid message type: {}.'.format(op_type)))
+            return self.send_error(connection_context, op_id, Exception(
+                "Invalid message type: {}.".format(op_type)))
 
     def send_execution_result(self, connection_context, op_id, execution_result):
         result = self.execution_result_to_dict(execution_result)

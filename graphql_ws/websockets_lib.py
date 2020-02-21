@@ -1,17 +1,14 @@
 from inspect import isawaitable
-
 from asyncio import ensure_future, wait, shield
 from websockets import ConnectionClosed
 from graphql.execution.executors.asyncio import AsyncioExecutor
 
-from .base import ConnectionClosedException, BaseConnectionContext, BaseSubscriptionServer
+from .base import (
+    ConnectionClosedException, BaseConnectionContext, BaseSubscriptionServer)
 from .observable_aiter import setup_observable_extension
 
 from .constants import (
-    GQL_CONNECTION_ACK,
-    GQL_CONNECTION_ERROR,
-    GQL_COMPLETE
-)
+    GQL_CONNECTION_ACK, GQL_CONNECTION_ERROR, GQL_COMPLETE)
 
 setup_observable_extension()
 
@@ -45,7 +42,8 @@ class WsLibSubscriptionServer(BaseSubscriptionServer):
     def get_graphql_params(self, *args, **kwargs):
         params = super(WsLibSubscriptionServer,
                        self).get_graphql_params(*args, **kwargs)
-        return dict(params, return_promise=True, executor=AsyncioExecutor(loop=self.loop))
+        return dict(params, return_promise=True,
+                    executor=AsyncioExecutor(loop=self.loop))
 
     async def _handle(self, ws, request_context):
         connection_context = WsLibConnectionContext(ws, request_context)
@@ -87,9 +85,11 @@ class WsLibSubscriptionServer(BaseSubscriptionServer):
     async def on_connection_init(self, connection_context, op_id, payload):
         try:
             await self.on_connect(connection_context, payload)
-            await self.send_message(connection_context, op_type=GQL_CONNECTION_ACK)
+            await self.send_message(
+                connection_context, op_type=GQL_CONNECTION_ACK)
         except Exception as e:
-            await self.send_error(connection_context, op_id, e, GQL_CONNECTION_ERROR)
+            await self.send_error(
+                connection_context, op_id, e, GQL_CONNECTION_ERROR)
             await connection_context.close(1011)
 
     async def on_start(self, connection_context, op_id, params):
@@ -100,14 +100,16 @@ class WsLibSubscriptionServer(BaseSubscriptionServer):
             execution_result = await execution_result
 
         if not hasattr(execution_result, '__aiter__'):
-            await self.send_execution_result(connection_context, op_id, execution_result)
+            await self.send_execution_result(
+                connection_context, op_id, execution_result)
         else:
             iterator = await execution_result.__aiter__()
             connection_context.register_operation(op_id, iterator)
             async for single_result in iterator:
                 if not connection_context.has_operation(op_id):
                     break
-                await self.send_execution_result(connection_context, op_id, single_result)
+                await self.send_execution_result(
+                    connection_context, op_id, single_result)
             await self.send_message(connection_context, op_id, GQL_COMPLETE)
 
     async def on_stop(self, connection_context, op_id):

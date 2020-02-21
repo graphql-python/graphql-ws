@@ -1,19 +1,11 @@
 from __future__ import absolute_import
 
-import json
-
-from graphql import format_error, graphql
-from graphql.execution.executors.sync import SyncExecutor
 from rx import Observer, Observable
+from graphql.execution.executors.sync import SyncExecutor
+
 from .base import (
-    ConnectionClosedException,
-    BaseConnectionContext,
-    BaseSubscriptionServer
-)
-from .constants import (
-    GQL_CONNECTION_ACK,
-    GQL_CONNECTION_ERROR
-)
+    ConnectionClosedException, BaseConnectionContext, BaseSubscriptionServer)
+from .constants import GQL_CONNECTION_ACK, GQL_CONNECTION_ERROR
 
 
 class GeventConnectionContext(BaseConnectionContext):
@@ -79,8 +71,8 @@ class GeventSubscriptionServer(BaseSubscriptionServer):
         try:
             execution_result = self.execute(
                 connection_context.request_context, params)
-            assert isinstance(
-                execution_result, Observable), "A subscription must return an observable"
+            assert isinstance(execution_result, Observable), \
+                "A subscription must return an observable"
             execution_result.subscribe(SubscriptionObserver(
                 connection_context,
                 op_id,
@@ -97,7 +89,8 @@ class GeventSubscriptionServer(BaseSubscriptionServer):
 
 class SubscriptionObserver(Observer):
 
-    def __init__(self, connection_context, op_id, send_execution_result, send_error, on_close):
+    def __init__(self, connection_context, op_id,
+                 send_execution_result, send_error, on_close):
         self.connection_context = connection_context
         self.op_id = op_id
         self.send_execution_result = send_execution_result
