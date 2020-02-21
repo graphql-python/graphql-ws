@@ -19,7 +19,7 @@ deploy:
       Smprd0l6U2diaHNtdzA0L3JpMzNZUHR1a3dTYkhUWEdzYm0zNFBzL1VUQXQzdDk1MG9CNWlxeHc9
   true:
     python: 2.7
-    repo: graphql-python/graphql_ws
+    repo: graphql-python/graphql-ws
     tags: true
 install: pip install -U tox-travis
 language: python
