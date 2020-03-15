@@ -17,7 +17,7 @@ deploy:
       Rk11bHg2dXBXTGY0a2d4cTUzYUxpR0o4NE5FOTFMakdPNXVxRnRHMVd4N0dIMHJmVDdoLy9NbXYz
       MnY1TzdSMDJ0d2xyS3pXWlB6SGxLWHVLc0dwemxCS3RLZ0RVQW02aEFBaFZwdDBVbUhTWnVtQ0I1
       cnFkWndJWFdTcEQ4SU8rRHMzTTdwbGMzMThPT2ZkOFo2MXU1dVlRZkFlUklURkRpNjVLUHp4Y1U9
-  true:
+  on:
     python: 2.7
     repo: graphql-python/graphql-ws
     tags: true
