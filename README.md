@@ -7,6 +7,10 @@ Currently supports:
 * [Gevent](https://github.com/graphql-python/graphql-ws#gevent)
 * Sanic (uses [websockets](https://github.com/aaugustin/websockets/) library)
 
+[![PyPI version](https://badge.fury.io/py/graphql-ws.svg)](https://badge.fury.io/py/graphql-ws)
+[![TravisCI Build Status](https://travis-ci.org/graphql-python/graphql-ws.svg?branch=master)](https://travis-ci.org/graphql-python/graphql-ws)
+[![codecov](https://codecov.io/gh/graphql-python/graphql-ws/branch/master/graph/badge.svg)](https://codecov.io/gh/graphql-python/graphql-ws)
+
 # Installation instructions
 
 For instaling graphql-ws, just run this command in your shell
@@ -167,8 +171,8 @@ class Subscription(graphene.ObjectType):
 
 
     def resolve_count_seconds(
-        root, 
-        info, 
+        root,
+        info,
         up_to=5
     ):
         return Observable.interval(1000)\

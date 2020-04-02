@@ -3,7 +3,7 @@
 
 """The setup script."""
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("README.rst") as readme_file:
     readme = readme_file.read()
@@ -14,7 +14,7 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 requirements = [
-    "graphql-core>=2.0,<3",
+    "graphql-core>=3.0.0",
     # TODO: put package requirements here
 ]
 
@@ -26,7 +26,8 @@ setup_requirements = [
 
 test_requirements = [
     "pytest",
-    # TODO: put package test requirements here
+    "pytest-aiohttp",
+    'asyncmock; python_version<"3.8"',
 ]
 
 setup(
@@ -57,7 +58,7 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8"
+        "Programming Language :: Python :: 3.8",
     ],
     test_suite="tests",
     tests_require=test_requirements,

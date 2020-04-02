@@ -1,20 +1,15 @@
-from inspect import isawaitable
-from asyncio import ensure_future, wait, shield
+from asyncio import ensure_future, shield, wait
 
 from aiohttp import WSMsgType
-from graphql.execution.executors.asyncio import AsyncioExecutor
+from graphql import subscribe
+from graphql.language import parse
 
 from .base import (
-    ConnectionClosedException, BaseConnectionContext, BaseSubscriptionServer)
-from .observable_aiter import setup_observable_extension
-
-from .constants import (
-    GQL_CONNECTION_ACK,
-    GQL_CONNECTION_ERROR,
-    GQL_COMPLETE
+    BaseConnectionContext,
+    BaseSubscriptionServer,
+    ConnectionClosedException,
 )
-
-setup_observable_extension()
+from .constants import GQL_COMPLETE, GQL_CONNECTION_ACK, GQL_CONNECTION_ERROR
 
 
 class AiohttpConnectionContext(BaseConnectionContext):
@@ -47,12 +42,6 @@ class AiohttpSubscriptionServer(BaseSubscriptionServer):
         self.loop = loop
         super().__init__(schema, keep_alive)
 
-    def get_graphql_params(self, *args, **kwargs):
-        params = super(AiohttpSubscriptionServer,
-                       self).get_graphql_params(*args, **kwargs)
-        return dict(params, return_promise=True,
-                    executor=AsyncioExecutor(loop=self.loop))
-
     async def _handle(self, ws, request_context=None):
         connection_context = AiohttpConnectionContext(ws, request_context)
         await self.on_open(connection_context)
@@ -69,7 +58,8 @@ class AiohttpSubscriptionServer(BaseSubscriptionServer):
                     (_, pending) = await wait(pending, timeout=0, loop=self.loop)
 
             task = ensure_future(
-                self.on_message(connection_context, message), loop=self.loop)
+                self.on_message(connection_context, message), loop=self.loop
+            )
             pending.add(task)
 
         self.on_close(connection_context)
@@ -99,23 +89,20 @@ class AiohttpSubscriptionServer(BaseSubscriptionServer):
             await connection_context.close(1011)
 
     async def on_start(self, connection_context, op_id, params):
-        execution_result = self.execute(
-            connection_context.request_context, params)
+        request_string = params.pop("request_string")
+        query = parse(request_string)
+        result = await subscribe(self.schema, query, **params)
 
-        if isawaitable(execution_result):
-            execution_result = await execution_result
-
-        if not hasattr(execution_result, '__aiter__'):
-            await self.send_execution_result(
-                connection_context, op_id, execution_result)
+        if not hasattr(result, "__aiter__"):
+            await self.send_execution_result(connection_context, op_id, result)
         else:
-            iterator = await execution_result.__aiter__()
-            connection_context.register_operation(op_id, iterator)
-            async for single_result in iterator:
+            connection_context.register_operation(op_id, result)
+            async for single_result in result:
                 if not connection_context.has_operation(op_id):
                     break
                 await self.send_execution_result(
-                    connection_context, op_id, single_result)
+                    connection_context, op_id, single_result
+                )
             await self.send_message(connection_context, op_id, GQL_COMPLETE)
 
     async def on_stop(self, connection_context, op_id):
