@@ -21,7 +21,7 @@ deploy:
     python: 3.6
     repo: graphql-python/graphql-ws
     tags: true
-install: pip install -U tox-travis pytest-cov codecov
+install: pip install -U tox-travis codecov
 language: python
 python:
 - 3.8

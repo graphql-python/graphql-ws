@@ -14,3 +14,4 @@ django>=1.5,<3
 channels>=1.0,<2
 pytest-aiohttp
 asyncmock; python_version<"3.8"
+pytest-cov
