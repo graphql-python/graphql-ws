@@ -12,3 +12,5 @@ gevent>=1.1,<2
 graphene>=2.0,<3
 django>=1.5,<3
 channels>=1.0,<2
+pytest-aiohttp
+asyncmock; python_version<"3.8"
