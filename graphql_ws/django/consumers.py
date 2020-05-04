@@ -22,6 +22,10 @@ class JSONPromiseEncoder(json.JSONEncoder):
 
 
 class GraphQLSubscriptionConsumer(AsyncJsonWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.futures = []
+
     async def connect(self):
         self.connection_context = None
         if WS_PROTOCOL in self.scope["subprotocols"]:
@@ -33,14 +37,22 @@ class GraphQLSubscriptionConsumer(AsyncJsonWebsocketConsumer):
             await self.close()
 
     async def disconnect(self, code):
+        for future in self.futures:
+            # Ensure any running message tasks are cancelled.
+            future.cancel()
         if self.connection_context:
             self.connection_context.socket_closed = True
-            await subscription_server.on_close(self.connection_context)
+            close_future = subscription_server.on_close(self.connection_context)
+        await asyncio.gather(close_future, *self.futures)
 
     async def receive_json(self, content):
-        asyncio.ensure_future(
-            subscription_server.on_message(self.connection_context, content)
+        self.futures.append(
+            asyncio.ensure_future(
+                subscription_server.on_message(self.connection_context, content)
+            )
         )
+        # Clean up any completed futures.
+        self.futures = [future for future in self.futures if not future.done()]
 
     @classmethod
     async def encode_json(cls, content):
