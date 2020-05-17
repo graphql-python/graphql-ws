@@ -17,8 +17,8 @@ class TestConnectionContext:
         ws = mock.Mock()
         ws.closed = False
         connection_context = GeventConnectionContext(ws=ws)
-        connection_context.send("test")
-        ws.send.assert_called_with("test")
+        connection_context.send({"text": "test"})
+        ws.send.assert_called_with('{"text": "test"}')
 
     def test_send_closed(self):
         ws = mock.Mock()

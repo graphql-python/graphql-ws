@@ -55,7 +55,7 @@ class TestConnectionContext:
     async def test_send(self, mock_ws):
         connection_context = AiohttpConnectionContext(ws=mock_ws)
         await connection_context.send("test")
-        mock_ws.send_str.assert_called_with("test")
+        mock_ws.send_str.assert_called_with('"test"')
 
     async def test_send_closed(self, mock_ws):
         mock_ws.closed = True

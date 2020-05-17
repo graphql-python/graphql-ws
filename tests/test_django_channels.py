@@ -14,7 +14,7 @@ class TestConnectionContext:
         msg = mock.Mock()
         connection_context = DjangoChannelConnectionContext(message=msg)
         connection_context.send("test")
-        msg.reply_channel.send.assert_called_with("test")
+        msg.reply_channel.send.assert_called_with({'text': '"test"'})
 
     def test_close(self):
         msg = mock.Mock()

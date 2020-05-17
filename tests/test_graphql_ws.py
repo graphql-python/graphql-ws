@@ -5,8 +5,9 @@ except ImportError:
     import mock
 
 import pytest
+from graphql.execution.executors.sync import SyncExecutor
 
-from graphql_ws import base, constants
+from graphql_ws import base, base_sync, constants
 
 
 @pytest.fixture
@@ -18,7 +19,7 @@ def cc():
 
 @pytest.fixture
 def ss():
-    return base.BaseSubscriptionServer(schema=None)
+    return base_sync.BaseSyncSubscriptionServer(schema=None)
 
 
 class TestConnectionContextOperation:
@@ -137,7 +138,9 @@ def test_get_graphql_params(ss, cc):
         "operationName": "query",
         "context": "ctx",
     }
-    assert ss.get_graphql_params(cc, payload) == {
+    params = ss.get_graphql_params(cc, payload)
+    assert isinstance(params.pop("executor"), SyncExecutor)
+    assert params == {
         "request_string": "req",
         "variable_values": "vars",
         "operation_name": "query",
@@ -189,34 +192,10 @@ def test_send_message(ss, cc):
     cc.send = mock.Mock()
     cc.send.return_value = "returned"
     assert "returned" == ss.send_message(cc)
-    cc.send.assert_called_with('{"mess": "age"}')
+    cc.send.assert_called_with({"mess": "age"})
 
 
 class TestSSNotImplemented:
     def test_handle(self, ss):
         with pytest.raises(NotImplementedError):
             ss.handle(ws=None, request_context=None)
-
-    def test_on_open(self, ss):
-        with pytest.raises(NotImplementedError):
-            ss.on_open(connection_context=None)
-
-    def test_on_connect(self, ss):
-        with pytest.raises(NotImplementedError):
-            ss.on_connect(connection_context=None, payload=None)
-
-    def test_on_close(self, ss):
-        with pytest.raises(NotImplementedError):
-            ss.on_close(connection_context=None)
-
-    def test_on_connection_init(self, ss):
-        with pytest.raises(NotImplementedError):
-            ss.on_connection_init(connection_context=None, op_id=None, payload=None)
-
-    def test_on_stop(self, ss):
-        with pytest.raises(NotImplementedError):
-            ss.on_stop(connection_context=None, op_id=None)
-
-    def test_on_start(self, ss):
-        with pytest.raises(NotImplementedError):
-            ss.on_start(connection_context=None, op_id=None, params=None)
