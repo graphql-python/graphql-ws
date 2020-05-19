@@ -71,14 +71,6 @@ class BaseSubscriptionServer(object):
         elif op_type == GQL_START:
             assert isinstance(payload, dict), "The payload must be a dict"
 
-            params = self.get_graphql_params(connection_context, payload)
-            if not isinstance(params, dict):
-                error = Exception(
-                    "Invalid params returned from get_graphql_params!"
-                    " Return values must be a dict."
-                )
-                return self.send_error(connection_context, op_id, error)
-
             # If we already have a subscription with this id, unsubscribe from
             # it first
             if connection_context.has_operation(op_id):
