@@ -1,4 +1,3 @@
-from graphql import graphql
 from graphql.execution.executors.sync import SyncExecutor
 from rx import Observable, Observer
 
@@ -19,9 +18,6 @@ class BaseSyncSubscriptionServer(BaseSubscriptionServer):
 
     def on_operation_complete(self, connection_context, op_id):
         pass
-
-    def execute(self, request_context, params):
-        return graphql(self.schema, **dict(params, allow_subscriptions=True))
 
     def handle(self, ws, request_context=None):
         raise NotImplementedError("handle method not implemented")
@@ -51,7 +47,7 @@ class BaseSyncSubscriptionServer(BaseSubscriptionServer):
 
     def on_start(self, connection_context, op_id, params):
         try:
-            execution_result = self.execute(connection_context.request_context, params)
+            execution_result = self.execute(params)
             assert isinstance(
                 execution_result, Observable
             ), "A subscription must return an observable"

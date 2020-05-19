@@ -79,7 +79,7 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
             await connection_context.close(1011)
 
     async def on_start(self, connection_context, op_id, params):
-        execution_result = self.execute(connection_context.request_context, params)
+        execution_result = self.execute(params)
 
         if isawaitable(execution_result):
             execution_result = await execution_result

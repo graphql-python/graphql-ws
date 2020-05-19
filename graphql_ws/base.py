@@ -1,7 +1,7 @@
 import json
 from collections import OrderedDict
 
-from graphql import format_error
+from graphql import format_error, graphql
 
 from .constants import (
     GQL_CONNECTION_ERROR,
@@ -57,6 +57,9 @@ class BaseSubscriptionServer(object):
         self.schema = schema
         self.keep_alive = keep_alive
 
+    def execute(self, params):
+        return graphql(self.schema, **dict(params, allow_subscriptions=True))
+
     def process_message(self, connection_context, parsed_message):
         op_id = parsed_message.get("id")
         op_type = parsed_message.get("type")
@@ -96,11 +99,13 @@ class BaseSubscriptionServer(object):
         return connection_context.close(1011)
 
     def get_graphql_params(self, connection_context, payload):
+        context = payload.get('context') or {}
+        context.setdefault('request_context', connection_context.request_context)
         return {
             "request_string": payload.get("query"),
             "variable_values": payload.get("variables"),
             "operation_name": payload.get("operationName"),
-            "context_value": payload.get("context"),
+            "context_value": context,
             "executor": self.graphql_executor(),
         }
 
