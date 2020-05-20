@@ -123,14 +123,7 @@ class BaseSubscriptionServer(object):
         return result
 
     def send_message(self, connection_context, op_id=None, op_type=None, payload=None):
-        message = {}
-        if op_id is not None:
-            message['id'] = op_id
-        if op_type is not None:
-            message['type'] = op_type
-        if payload is not None:
-            message['payload'] = payload
-
+        message = self.build_message(op_id, op_type, payload)
         assert message, "You need to send at least one thing"
         json_message = json.dumps(message)
         return connection_context.send(json_message)
