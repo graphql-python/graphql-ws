@@ -21,19 +21,20 @@ from django.http import HttpResponse
 from graphene_django.views import GraphQLView
 from django.views.decorators.csrf import csrf_exempt
 
+from channels.routing import route_class
+from graphql_ws.django_channels import GraphQLSubscriptionConsumer
+
 
 def graphiql(request):
     response = HttpResponse(content=render_graphiql())
     return response
 
-urlpatterns = [
-    url(r'^admin/', admin.site.urls),
-    url(r'^graphiql/', graphiql),
-    url(r'^graphql', csrf_exempt(GraphQLView.as_view(graphiql=True)))
-]
 
-from channels.routing import route_class
-from graphql_ws.django_channels import GraphQLSubscriptionConsumer
+urlpatterns = [
+    url(r"^admin/", admin.site.urls),
+    url(r"^graphiql/", graphiql),
+    url(r"^graphql", csrf_exempt(GraphQLView.as_view(graphiql=True))),
+]
 
 channel_routing = [
     route_class(GraphQLSubscriptionConsumer, path=r"^/subscriptions"),
