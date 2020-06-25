@@ -99,8 +99,8 @@ class BaseSubscriptionServer(object):
         return connection_context.close(1011)
 
     def get_graphql_params(self, connection_context, payload):
-        context = payload.get('context') or {}
-        context.setdefault('request_context', connection_context.request_context)
+        context = payload.get("context") or {}
+        context.setdefault("request_context", connection_context.request_context)
         return {
             "request_string": payload.get("query"),
             "variable_values": payload.get("variables"),
