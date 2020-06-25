@@ -168,3 +168,11 @@ class BaseSubscriptionServer(object):
             return self.send_error(connection_context, None, e)
 
         return self.process_message(connection_context, parsed_message)
+
+    def unsubscribe(self, connection_context, op_id):
+        if connection_context.has_operation(op_id):
+            # Close async iterator
+            connection_context.get_operation(op_id).dispose()
+            # Close operation
+            connection_context.remove_operation(op_id)
+        self.on_operation_complete(connection_context, op_id)

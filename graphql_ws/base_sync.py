@@ -8,14 +8,6 @@ from .constants import GQL_CONNECTION_ACK, GQL_CONNECTION_ERROR
 class BaseSyncSubscriptionServer(BaseSubscriptionServer):
     graphql_executor = SyncExecutor
 
-    def unsubscribe(self, connection_context, op_id):
-        if connection_context.has_operation(op_id):
-            # Close async iterator
-            connection_context.get_operation(op_id).dispose()
-            # Close operation
-            connection_context.remove_operation(op_id)
-        self.on_operation_complete(connection_context, op_id)
-
     def on_operation_complete(self, connection_context, op_id):
         pass
 
@@ -51,7 +43,7 @@ class BaseSyncSubscriptionServer(BaseSubscriptionServer):
             assert isinstance(
                 execution_result, Observable
             ), "A subscription must return an observable"
-            execution_result.subscribe(
+            disposable = execution_result.subscribe(
                 SubscriptionObserver(
                     connection_context,
                     op_id,
@@ -60,6 +52,8 @@ class BaseSyncSubscriptionServer(BaseSubscriptionServer):
                     self.on_close,
                 )
             )
+            connection_context.register_operation(op_id, disposable)
+
         except Exception as e:
             self.send_error(connection_context, op_id, str(e))
 

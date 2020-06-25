@@ -111,8 +111,5 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
     async def on_stop(self, connection_context, op_id):
         await self.unsubscribe(connection_context, op_id)
 
-    async def unsubscribe(self, connection_context, op_id):
-        await super().unsubscribe(connection_context, op_id)
-
     async def on_operation_complete(self, connection_context, op_id):
         pass
