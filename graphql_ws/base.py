@@ -34,7 +34,10 @@ class BaseConnectionContext(object):
         return self.operations[op_id]
 
     def remove_operation(self, op_id):
-        del self.operations[op_id]
+        try:
+            del self.operations[op_id]
+        except KeyError:
+            pass
 
     def receive(self):
         raise NotImplementedError("receive method not implemented")

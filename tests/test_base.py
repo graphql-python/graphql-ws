@@ -60,3 +60,15 @@ def test_message_invalid():
     server.send_error = mock.Mock()
     server.on_message(connection_context=None, message="'not-json")
     assert server.send_error.called
+
+
+def test_context_operations():
+    ws = mock.Mock()
+    context = base.BaseConnectionContext(ws)
+    assert not context.has_operation(1)
+    context.register_operation(1, None)
+    assert context.has_operation(1)
+    context.remove_operation(1)
+    assert not context.has_operation(1)
+    # Removing a non-existant operation fails silently.
+    context.remove_operation(999)
