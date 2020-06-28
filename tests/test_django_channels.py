@@ -5,7 +5,7 @@ import json
 import django
 import mock
 from channels import Channel
-from channels.test import ChannelTestCase, Client
+from channels.test import ChannelTestCase
 from django.conf import settings
 from django.core.management import call_command
 
@@ -25,8 +25,8 @@ settings.configure(
 )
 django.setup()
 
-from graphql_ws.constants import GQL_CONNECTION_ACK, GQL_CONNECTION_INIT
-from graphql_ws.django_channels import (
+from graphql_ws.constants import GQL_CONNECTION_ACK, GQL_CONNECTION_INIT  # noqa: E402
+from graphql_ws.django_channels import (  # noqa: E402
     DjangoChannelConnectionContext,
     DjangoChannelSubscriptionServer,
     GraphQLSubscriptionConsumer,
