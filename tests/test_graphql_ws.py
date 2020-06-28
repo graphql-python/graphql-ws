@@ -111,7 +111,7 @@ class TestProcessMessage:
         ss.unsubscribe = mock.Mock()
         ss.on_start = mock.Mock()
         ss.process_message(
-            cc, {"id": "1", "type": constants.GQL_START, "payload": {"a": "b"}}
+            cc, {"id": "1", "type": None, "payload": {"a": "b"}}
         )
         assert ss.send_error.called
         assert ss.send_error.call_args[0][:2] == (cc, "1")
@@ -136,7 +136,7 @@ def test_get_graphql_params(ss, cc):
         "query": "req",
         "variables": "vars",
         "operationName": "query",
-        "context": "ctx",
+        "context": {},
     }
     params = ss.get_graphql_params(cc, payload)
     assert isinstance(params.pop("executor"), SyncExecutor)
@@ -144,7 +144,7 @@ def test_get_graphql_params(ss, cc):
         "request_string": "req",
         "variable_values": "vars",
         "operation_name": "query",
-        "context_value": "ctx",
+        "context_value": {'request_context': None},
     }
 
 
