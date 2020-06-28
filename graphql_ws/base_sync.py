@@ -21,7 +21,7 @@ class BaseSyncSubscriptionServer(BaseSubscriptionServer):
         pass
 
     def on_close(self, connection_context):
-        remove_operations = list(connection_context.operations.keys())
+        remove_operations = list(connection_context.operations)
         for op_id in remove_operations:
             self.unsubscribe(connection_context, op_id)
 
