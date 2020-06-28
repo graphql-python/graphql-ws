@@ -87,16 +87,23 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
         if hasattr(execution_result, "__aiter__"):
             iterator = await execution_result.__aiter__()
             connection_context.register_operation(op_id, iterator)
-            async for single_result in iterator:
-                if not connection_context.has_operation(op_id):
-                    break
-                await self.send_execution_result(
-                    connection_context, op_id, single_result
-                )
+            try:
+                async for single_result in iterator:
+                    if not connection_context.has_operation(op_id):
+                        break
+                    await self.send_execution_result(
+                        connection_context, op_id, single_result
+                    )
+            except Exception as e:
+                await self.send_error(connection_context, op_id, e)
+            connection_context.remove_operation(op_id)
         else:
-            await self.send_execution_result(
-                connection_context, op_id, execution_result
-            )
+            try:
+                await self.send_execution_result(
+                    connection_context, op_id, execution_result
+                )
+            except Exception as e:
+                await self.send_error(connection_context, op_id, e)
         await self.send_message(connection_context, op_id, GQL_COMPLETE)
         await self.on_operation_complete(connection_context, op_id)
 
