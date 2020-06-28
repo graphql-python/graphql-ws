@@ -2,7 +2,7 @@ from graphql.execution.executors.sync import SyncExecutor
 from rx import Observable, Observer
 
 from .base import BaseSubscriptionServer
-from .constants import GQL_CONNECTION_ACK, GQL_CONNECTION_ERROR
+from .constants import GQL_COMPLETE, GQL_CONNECTION_ACK, GQL_CONNECTION_ERROR
 
 
 class BaseSyncSubscriptionServer(BaseSubscriptionServer):
@@ -49,30 +49,33 @@ class BaseSyncSubscriptionServer(BaseSubscriptionServer):
                     op_id,
                     self.send_execution_result,
                     self.send_error,
-                    self.on_close,
+                    self.send_message,
                 )
             )
             connection_context.register_operation(op_id, disposable)
 
         except Exception as e:
-            self.send_error(connection_context, op_id, str(e))
+            self.send_error(connection_context, op_id, e)
+            self.send_message(connection_context, op_id, GQL_COMPLETE)
 
 
 class SubscriptionObserver(Observer):
     def __init__(
-        self, connection_context, op_id, send_execution_result, send_error, on_close
+        self, connection_context, op_id, send_execution_result, send_error, send_message
     ):
         self.connection_context = connection_context
         self.op_id = op_id
         self.send_execution_result = send_execution_result
         self.send_error = send_error
-        self.on_close = on_close
+        self.send_message = send_message
 
     def on_next(self, value):
         self.send_execution_result(self.connection_context, self.op_id, value)
 
     def on_completed(self):
-        self.on_close(self.connection_context)
+        self.send_message(self.connection_context, self.op_id, GQL_COMPLETE)
+        self.connection_context.remove_operation(self.op_id)
 
     def on_error(self, error):
         self.send_error(self.connection_context, self.op_id, error)
+        self.on_completed()
