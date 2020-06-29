@@ -20,14 +20,14 @@ class Subscription(graphene.ObjectType):
         for i in range(up_to):
             print("YIELD SECOND", i)
             yield i
-            await asyncio.sleep(1.)
+            await asyncio.sleep(1.0)
         yield up_to
 
     async def resolve_random_int(root, info):
         i = 0
         while True:
             yield RandomType(seconds=i, random_int=random.randint(0, 500))
-            await asyncio.sleep(1.)
+            await asyncio.sleep(1.0)
             i += 1
 
 

@@ -9,6 +9,8 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+venv/
+.venv/
 build/
 develop-eggs/
 dist/
@@ -42,7 +44,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
-*,cover
+*.cover
 .hypothesis/
 
 # Translations
@@ -63,6 +65,8 @@ target/
 .DS_Store
 
 .mypy_cache/
+
+.idea/
 .vscode/
 
 *.sqlite3
