@@ -1,5 +1,5 @@
 import json
-from asyncio import ensure_future, shield
+from asyncio import shield
 
 from websockets import ConnectionClosed
 
@@ -41,9 +41,7 @@ class WsLibSubscriptionServer(BaseAsyncSubscriptionServer):
                 break
 
             connection_context.remember_task(
-                ensure_future(
-                    self.on_message(connection_context, message), loop=self.loop
-                )
+                self.on_message(connection_context, message), loop=self.loop
             )
         await self.on_close(connection_context)
 

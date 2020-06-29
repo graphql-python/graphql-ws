@@ -35,8 +35,8 @@ class BaseAsyncConnectionContext(base.BaseConnectionContext, ABC):
     async def close(self, code):
         ...
 
-    def remember_task(self, task):
-        self.pending_tasks.add(asyncio.ensure_future(task))
+    def remember_task(self, task, loop=None):
+        self.pending_tasks.add(asyncio.ensure_future(task, loop=loop))
         # Clear completed tasks
         self.pending_tasks -= WeakSet(
             task for task in self.pending_tasks if task.done()
