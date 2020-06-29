@@ -1,0 +1,4 @@
+-e ../..
+django<2
+channels<2
+graphene_django<3
