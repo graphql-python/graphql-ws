@@ -46,7 +46,7 @@ Create a subscribable schema like this:
     class Query(graphene.ObjectType):
         hello = graphene.String()
 
-        @static_method
+        @staticmethod
         def resolve_hello(obj, info, **kwargs):
             return "world"
 
@@ -132,7 +132,7 @@ Create a subscribable schema like this:
     class Query(graphene.ObjectType):
         hello = graphene.String()
 
-        @static_method
+        @staticmethod
         def resolve_hello(obj, info, **kwargs):
             return "world"
 
