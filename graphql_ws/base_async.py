@@ -1,9 +1,12 @@
 import asyncio
+import inspect
 from abc import ABC, abstractmethod
-from inspect import isawaitable
+from types import CoroutineType, GeneratorType
+from typing import Any, Union, List, Dict
 from weakref import WeakSet
 
 from graphql.execution.executors.asyncio import AsyncioExecutor
+from promise import Promise
 
 from graphql_ws import base
 
@@ -11,6 +14,49 @@ from .constants import GQL_COMPLETE, GQL_CONNECTION_ACK, GQL_CONNECTION_ERROR
 from .observable_aiter import setup_observable_extension
 
 setup_observable_extension()
+CO_ITERABLE_COROUTINE = inspect.CO_ITERABLE_COROUTINE
+
+
+# Copied from graphql-core v3.1.0 (graphql/pyutils/is_awaitable.py)
+def is_awaitable(value: Any) -> bool:
+    """Return true if object can be passed to an ``await`` expression.
+    Instead of testing if the object is an instance of abc.Awaitable, it checks
+    the existence of an `__await__` attribute. This is much faster.
+    """
+    return (
+        # check for coroutine objects
+        isinstance(value, CoroutineType)
+        # check for old-style generator based coroutine objects
+        or isinstance(value, GeneratorType)
+        and bool(value.gi_code.co_flags & CO_ITERABLE_COROUTINE)
+        # check for other awaitables (e.g. futures)
+        or hasattr(value, "__await__")
+    )
+
+
+async def resolve(
+    data: Any, _container: Union[List, Dict] = None, _key: Union[str, int] = None
+) -> None:
+    """
+    Recursively wait on any awaitable children of a data element and resolve any
+    Promises.
+    """
+    if is_awaitable(data):
+        data = await data
+        if isinstance(data, Promise):
+            data = data.value  # type: Any
+        if _container is not None:
+            _container[_key] = data
+    if isinstance(data, dict):
+        items = data.items()
+    elif isinstance(data, list):
+        items = enumerate(data)
+    else:
+        items = None
+    if items is not None:
+        children = [resolve(child, _container=data, _key=key) for key, child in items]
+        if children:
+            await asyncio.wait(children)
 
 
 class BaseAsyncConnectionContext(base.BaseConnectionContext, ABC):
@@ -81,7 +127,7 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
     async def on_start(self, connection_context, op_id, params):
         execution_result = self.execute(params)
 
-        if isawaitable(execution_result):
+        if is_awaitable(execution_result):
             execution_result = await execution_result
 
         if hasattr(execution_result, "__aiter__"):
@@ -120,3 +166,8 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
 
     async def on_operation_complete(self, connection_context, op_id):
         pass
+
+    async def send_execution_result(self, connection_context, op_id, execution_result):
+        # Resolve any pending promises
+        await resolve(execution_result.data)
+        await super().send_execution_result(connection_context, op_id, execution_result)
