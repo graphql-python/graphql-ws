@@ -178,4 +178,4 @@ class BaseSubscriptionServer(object):
             connection_context.get_operation(op_id).dispose()
             # Close operation
             connection_context.remove_operation(op_id)
-        self.on_operation_complete(connection_context, op_id)
+        return self.on_operation_complete(connection_context, op_id)
