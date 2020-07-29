@@ -81,8 +81,8 @@ class BaseAsyncConnectionContext(base.BaseConnectionContext, ABC):
     async def close(self, code):
         ...
 
-    def remember_task(self, task, loop=None):
-        self.pending_tasks.add(asyncio.ensure_future(task, loop=loop))
+    def remember_task(self, task):
+        self.pending_tasks.add(task)
         # Clear completed tasks
         self.pending_tasks -= WeakSet(
             task for task in self.pending_tasks if task.done()
@@ -102,9 +102,9 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
 
     def process_message(self, connection_context, parsed_message):
         task = asyncio.ensure_future(
-            super().process_message(connection_context, parsed_message)
+            super().process_message(connection_context, parsed_message), loop=self.loop
         )
-        connection_context.pending.add(task)
+        connection_context.remember_task(task)
         return task
 
     async def send_message(self, *args, **kwargs):
