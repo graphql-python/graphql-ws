@@ -40,9 +40,7 @@ class WsLibSubscriptionServer(BaseAsyncSubscriptionServer):
             except ConnectionClosedException:
                 break
 
-            connection_context.remember_task(
-                self.on_message(connection_context, message), loop=self.loop
-            )
+            self.on_message(connection_context, message)
         await self.on_close(connection_context)
 
     async def handle(self, ws, request_context=None):
