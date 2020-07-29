@@ -16,8 +16,13 @@ def test_not_implemented():
         server.on_connection_init(connection_context=None, op_id=1, payload={})
     with pytest.raises(NotImplementedError):
         server.on_open(connection_context=None)
-    with pytest.raises(NotImplementedError):
-        server.on_stop(connection_context=None, op_id=1)
+
+
+def test_on_stop():
+    server = base.BaseSubscriptionServer(schema=None)
+    context = mock.Mock()
+    server.on_stop(connection_context=context, op_id=1)
+    context.unsubscribe.assert_called_with(1)
 
 
 def test_terminate():

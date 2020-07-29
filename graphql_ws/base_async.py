@@ -88,6 +88,20 @@ class BaseAsyncConnectionContext(base.BaseConnectionContext, ABC):
             task for task in self.pending_tasks if task.done()
         )
 
+    async def unsubscribe(self, op_id):
+        super().unsubscribe(op_id)
+
+    async def unsubscribe_all(self):
+        awaitables = [self.unsubscribe(op_id) for op_id in list(self.operations)]
+        for task in self.pending_tasks:
+            task.cancel()
+            awaitables.append(task)
+        if awaitables:
+            try:
+                await asyncio.gather(*awaitables)
+            except asyncio.CancelledError:
+                pass
+
 
 class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
     graphql_executor = AsyncioExecutor
@@ -125,6 +139,10 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
             await connection_context.close(1011)
 
     async def on_start(self, connection_context, op_id, params):
+        # Attempt to unsubscribe first in case we already have a subscription
+        # with this id.
+        await connection_context.unsubscribe(op_id)
+
         execution_result = self.execute(params)
 
         if is_awaitable(execution_result):
@@ -152,20 +170,6 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
                 await self.send_error(connection_context, op_id, e)
         await self.send_message(connection_context, op_id, GQL_COMPLETE)
         await self.on_operation_complete(connection_context, op_id)
-
-    async def on_close(self, connection_context):
-        awaitables = tuple(
-            self.unsubscribe(connection_context, op_id)
-            for op_id in connection_context.operations
-        ) + tuple(task.cancel() for task in connection_context.pending_tasks)
-        if awaitables:
-            try:
-                await asyncio.gather(*awaitables, loop=self.loop)
-            except asyncio.CancelledError:
-                pass
-
-    async def on_stop(self, connection_context, op_id):
-        await self.unsubscribe(connection_context, op_id)
 
     async def on_operation_complete(self, connection_context, op_id):
         pass
