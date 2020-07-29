@@ -22,6 +22,12 @@ class ChannelsConnectionContext(BaseAsyncConnectionContext):
     async def close(self, code):
         await self.ws.close(code=code)
 
+    async def receive(self, code):
+        """
+        Unused, as the django consumer handles receiving messages and passes
+        them straight to ChannelsSubscriptionServer.on_message.
+        """
+
 
 class ChannelsSubscriptionServer(BaseAsyncSubscriptionServer):
     async def handle(self, ws, request_context=None):
