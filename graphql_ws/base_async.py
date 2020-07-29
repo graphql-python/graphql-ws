@@ -159,7 +159,10 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
             for op_id in connection_context.operations
         ) + tuple(task.cancel() for task in connection_context.pending_tasks)
         if awaitables:
-            await asyncio.gather(*awaitables, loop=self.loop)
+            try:
+                await asyncio.gather(*awaitables, loop=self.loop)
+            except asyncio.CancelledError:
+                pass
 
     async def on_stop(self, connection_context, op_id):
         await self.unsubscribe(connection_context, op_id)
