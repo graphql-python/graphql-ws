@@ -121,9 +121,6 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
         connection_context.remember_task(task)
         return task
 
-    async def send_message(self, *args, **kwargs):
-        await super().send_message(*args, **kwargs)
-
     async def on_open(self, connection_context):
         pass
 
