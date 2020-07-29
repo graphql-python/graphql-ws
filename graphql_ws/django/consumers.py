@@ -24,9 +24,7 @@ class GraphQLSubscriptionConsumer(AsyncJsonWebsocketConsumer):
             await subscription_server.on_close(self.connection_context)
 
     async def receive_json(self, content):
-        self.connection_context.remember_task(
-            subscription_server.on_message(self.connection_context, content)
-        )
+        subscription_server.on_message(self.connection_context, content)
 
     @classmethod
     async def encode_json(cls, content):
