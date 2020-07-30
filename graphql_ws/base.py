@@ -125,9 +125,9 @@ class BaseSubscriptionServer(object):
         return connection_context.unsubscribe_all()
 
     def send_message(self, connection_context, op_id=None, op_type=None, payload=None):
-        message = self.build_message(op_id, op_type, payload)
-        assert message, "You need to send at least one thing"
-        return connection_context.send(message)
+        if op_id is None or connection_context.has_operation(op_id):
+            message = self.build_message(op_id, op_type, payload)
+            return connection_context.send(message)
 
     def build_message(self, id, op_type, payload):
         message = {}
@@ -137,6 +137,7 @@ class BaseSubscriptionServer(object):
             message["type"] = op_type
         if payload is not None:
             message["payload"] = payload
+        assert message, "You need to send at least one thing"
         return message
 
     def send_execution_result(self, connection_context, op_id, execution_result):

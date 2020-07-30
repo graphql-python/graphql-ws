@@ -142,6 +142,7 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
 
         execution_result = self.execute(params)
 
+        connection_context.register_operation(op_id, execution_result)
         if is_awaitable(execution_result):
             execution_result = await execution_result
 
@@ -157,7 +158,6 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
                     )
             except Exception as e:
                 await self.send_error(connection_context, op_id, e)
-            connection_context.remove_operation(op_id)
         else:
             try:
                 await self.send_execution_result(
@@ -166,7 +166,15 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
             except Exception as e:
                 await self.send_error(connection_context, op_id, e)
         await self.send_message(connection_context, op_id, GQL_COMPLETE)
+        connection_context.remove_operation(op_id)
         await self.on_operation_complete(connection_context, op_id)
+
+    async def send_message(
+        self, connection_context, op_id=None, op_type=None, payload=None
+    ):
+        if op_id is None or connection_context.has_operation(op_id):
+            message = self.build_message(op_id, op_type, payload)
+            return await connection_context.send(message)
 
     async def on_operation_complete(self, connection_context, op_id):
         pass
