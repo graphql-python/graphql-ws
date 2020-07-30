@@ -143,9 +143,6 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
         execution_result = self.execute(params)
 
         connection_context.register_operation(op_id, execution_result)
-        if is_awaitable(execution_result):
-            execution_result = await execution_result
-
         if hasattr(execution_result, "__aiter__"):
             iterator = await execution_result.__aiter__()
             connection_context.register_operation(op_id, iterator)
@@ -160,6 +157,8 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
                 await self.send_error(connection_context, op_id, e)
         else:
             try:
+                if is_awaitable(execution_result):
+                    execution_result = await execution_result
                 await self.send_execution_result(
                     connection_context, op_id, execution_result
                 )
