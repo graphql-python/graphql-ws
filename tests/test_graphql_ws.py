@@ -94,12 +94,12 @@ class TestProcessMessage:
         ss.get_graphql_params.return_value = {"params": True}
         cc.has_operation = mock.Mock()
         cc.has_operation.return_value = True
-        ss.unsubscribe = mock.Mock()
+        cc.unsubscribe = mock.Mock()
         ss.on_start = mock.Mock()
         ss.process_message(
             cc, {"id": "1", "type": constants.GQL_START, "payload": {"a": "b"}}
         )
-        assert ss.unsubscribe.called
+        assert cc.unsubscribe.called
         ss.on_start.assert_called_with(cc, "1", {"params": True})
 
     def test_start_bad_graphql_params(self, ss, cc):
@@ -162,7 +162,8 @@ def test_build_message_partial(ss):
     assert ss.build_message(id=None, op_type=None, payload="PAYLOAD") == {
         "payload": "PAYLOAD"
     }
-    assert ss.build_message(id=None, op_type=None, payload=None) == {}
+    with pytest.raises(AssertionError):
+        ss.build_message(id=None, op_type=None, payload=None)
 
 
 def test_send_execution_result(ss):

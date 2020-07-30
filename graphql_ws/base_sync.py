@@ -20,11 +20,6 @@ class BaseSyncSubscriptionServer(BaseSubscriptionServer):
     def on_connect(self, connection_context, payload):
         pass
 
-    def on_close(self, connection_context):
-        remove_operations = list(connection_context.operations)
-        for op_id in remove_operations:
-            self.unsubscribe(connection_context, op_id)
-
     def on_connection_init(self, connection_context, op_id, payload):
         try:
             self.on_connect(connection_context, payload)
@@ -34,10 +29,10 @@ class BaseSyncSubscriptionServer(BaseSubscriptionServer):
             self.send_error(connection_context, op_id, e, GQL_CONNECTION_ERROR)
             connection_context.close(1011)
 
-    def on_stop(self, connection_context, op_id):
-        self.unsubscribe(connection_context, op_id)
-
     def on_start(self, connection_context, op_id, params):
+        # Attempt to unsubscribe first in case we already have a subscription
+        # with this id.
+        connection_context.unsubscribe(op_id)
         try:
             execution_result = self.execute(params)
             assert isinstance(

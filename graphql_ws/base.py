@@ -35,9 +35,18 @@ class BaseConnectionContext(object):
 
     def remove_operation(self, op_id):
         try:
-            del self.operations[op_id]
+            return self.operations.pop(op_id)
         except KeyError:
-            pass
+            return
+
+    def unsubscribe(self, op_id):
+        async_iterator = self.remove_operation(op_id)
+        if hasattr(async_iterator, 'dispose'):
+            async_iterator.dispose()
+
+    def unsubscribe_all(self):
+        for op_id in list(self.operations):
+            self.unsubscribe(op_id)
 
     def receive(self):
         raise NotImplementedError("receive method not implemented")
@@ -76,12 +85,6 @@ class BaseSubscriptionServer(object):
 
         elif op_type == GQL_START:
             assert isinstance(payload, dict), "The payload must be a dict"
-
-            # If we already have a subscription with this id, unsubscribe from
-            # it first
-            if connection_context.has_operation(op_id):
-                self.unsubscribe(connection_context, op_id)
-
             params = self.get_graphql_params(connection_context, payload)
             return self.on_start(connection_context, op_id, params)
 
@@ -116,12 +119,15 @@ class BaseSubscriptionServer(object):
         raise NotImplementedError("on_open method not implemented")
 
     def on_stop(self, connection_context, op_id):
-        raise NotImplementedError("on_stop method not implemented")
+        return connection_context.unsubscribe(op_id)
+
+    def on_close(self, connection_context):
+        return connection_context.unsubscribe_all()
 
     def send_message(self, connection_context, op_id=None, op_type=None, payload=None):
-        message = self.build_message(op_id, op_type, payload)
-        assert message, "You need to send at least one thing"
-        return connection_context.send(message)
+        if op_id is None or connection_context.has_operation(op_id):
+            message = self.build_message(op_id, op_type, payload)
+            return connection_context.send(message)
 
     def build_message(self, id, op_type, payload):
         message = {}
@@ -131,6 +137,7 @@ class BaseSubscriptionServer(object):
             message["type"] = op_type
         if payload is not None:
             message["payload"] = payload
+        assert message, "You need to send at least one thing"
         return message
 
     def send_execution_result(self, connection_context, op_id, execution_result):
@@ -171,11 +178,3 @@ class BaseSubscriptionServer(object):
             return self.send_error(connection_context, None, e)
 
         return self.process_message(connection_context, parsed_message)
-
-    def unsubscribe(self, connection_context, op_id):
-        if connection_context.has_operation(op_id):
-            # Close async iterator
-            connection_context.get_operation(op_id).dispose()
-            # Close operation
-            connection_context.remove_operation(op_id)
-        return self.on_operation_complete(connection_context, op_id)
