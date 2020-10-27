@@ -73,13 +73,14 @@ class GeventSubscriptionServer(BaseSubscriptionServer):
                 connection_context.request_context, params)
             assert isinstance(execution_result, Observable), \
                 "A subscription must return an observable"
-            execution_result.subscribe(SubscriptionObserver(
+            disposable = execution_result.subscribe(SubscriptionObserver(
                 connection_context,
                 op_id,
                 self.send_execution_result,
                 self.send_error,
                 self.on_close
             ))
+            connection_context.register_operation(op_id, disposable)
         except Exception as e:
             self.send_error(connection_context, op_id, str(e))
 
