@@ -165,7 +165,7 @@ class BaseAsyncSubscriptionServer(base.BaseSubscriptionServer, ABC):
             except Exception as e:
                 await self.send_error(connection_context, op_id, e)
         await self.send_message(connection_context, op_id, GQL_COMPLETE)
-        connection_context.remove_operation(op_id)
+        await connection_context.unsubscribe(op_id)
         await self.on_operation_complete(connection_context, op_id)
 
     async def send_message(
