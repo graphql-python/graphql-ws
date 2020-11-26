@@ -1,4 +1,5 @@
 from collections import OrderedDict
+
 try:
     from unittest import mock
 except ImportError:
@@ -95,12 +96,12 @@ class TestProcessMessage:
         cc.has_operation = mock.Mock()
         cc.has_operation.return_value = True
         cc.unsubscribe = mock.Mock()
-        ss.on_start = mock.Mock()
+        ss.execute = mock.Mock()
+        ss.send_message = mock.Mock()
         ss.process_message(
             cc, {"id": "1", "type": constants.GQL_START, "payload": {"a": "b"}}
         )
         assert cc.unsubscribe.called
-        ss.on_start.assert_called_with(cc, "1", {"params": True})
 
     def test_start_bad_graphql_params(self, ss, cc):
         ss.get_graphql_params = mock.Mock()
@@ -110,9 +111,7 @@ class TestProcessMessage:
         ss.send_error = mock.Mock()
         ss.unsubscribe = mock.Mock()
         ss.on_start = mock.Mock()
-        ss.process_message(
-            cc, {"id": "1", "type": None, "payload": {"a": "b"}}
-        )
+        ss.process_message(cc, {"id": "1", "type": None, "payload": {"a": "b"}})
         assert ss.send_error.called
         assert ss.send_error.call_args[0][:2] == (cc, "1")
         assert isinstance(ss.send_error.call_args[0][2], Exception)
@@ -144,7 +143,7 @@ def test_get_graphql_params(ss, cc):
         "request_string": "req",
         "variable_values": "vars",
         "operation_name": "query",
-        "context_value": {'request_context': None},
+        "context_value": {},
     }
 
 
