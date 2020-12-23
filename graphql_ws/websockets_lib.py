@@ -1,5 +1,6 @@
 from inspect import isawaitable
-from asyncio import ensure_future, wait, shield
+
+from asyncio import ensure_future
 from websockets import ConnectionClosed
 from graphql.execution.executors.asyncio import AsyncioExecutor
 

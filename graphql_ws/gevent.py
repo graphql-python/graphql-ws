@@ -71,15 +71,16 @@ class GeventSubscriptionServer(BaseSubscriptionServer):
         try:
             execution_result = self.execute(
                 connection_context.request_context, params)
-            assert isinstance(execution_result, Observable), \
-                "A subscription must return an observable"
-            execution_result.subscribe(SubscriptionObserver(
+            assert isinstance(
+                execution_result, Observable), "A subscription must return an observable"
+            disposable = execution_result.subscribe(SubscriptionObserver(
                 connection_context,
                 op_id,
                 self.send_execution_result,
                 self.send_error,
                 self.on_close
             ))
+            connection_context.register_operation(op_id, disposable)
         except Exception as e:
             self.send_error(connection_context, op_id, str(e))
 
@@ -89,8 +90,8 @@ class GeventSubscriptionServer(BaseSubscriptionServer):
 
 class SubscriptionObserver(Observer):
 
-    def __init__(self, connection_context, op_id,
-                 send_execution_result, send_error, on_close):
+    def __init__(self, connection_context, op_id, send_execution_result,
+                 send_error, on_close):
         self.connection_context = connection_context
         self.op_id = op_id
         self.send_execution_result = send_execution_result

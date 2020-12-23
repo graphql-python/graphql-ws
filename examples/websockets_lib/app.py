@@ -1,3 +1,5 @@
+import asyncio
+
 from graphql_ws.websockets_lib import WsLibSubscriptionServer
 from graphql.execution.executors.asyncio import AsyncioExecutor
 from sanic import Sanic, response
@@ -9,10 +11,23 @@ app = Sanic(__name__)
 
 
 @app.listener('before_server_start')
-def init_graphql(app, loop):
+async def init_graphql(app, loop):
     app.add_route(GraphQLView.as_view(schema=schema,
                                       executor=AsyncioExecutor(loop=loop)),
                                       '/graphql')
+
+
+@app.listener('before_server_stop')
+async def cleanup_subscription_tasks(app, loop):
+    # clean up tasks created by subscriptions and pubsub
+    def shutdown_exception_handler(loop, context):
+        if "exception" not in context or not isinstance(
+                context["exception"], asyncio.CancelledError):
+            loop.default_exception_handler(context)
+    loop.set_exception_handler(shutdown_exception_handler)
+    pending = asyncio.Task.all_tasks(loop=loop)
+    future = asyncio.gather(*pending, loop=loop, return_exceptions=True)
+    future.cancel()
 
 
 @app.route('/graphiql')
