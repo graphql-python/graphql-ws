@@ -55,7 +55,7 @@ async def resolve(
         items = None
     if items is not None:
         children = [
-            asyncio.create_task(resolve(child, _container=data, _key=key))
+            asyncio.ensure_future(resolve(child, _container=data, _key=key))
             for key, child in items
         ]
         if children:
