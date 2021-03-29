@@ -3,8 +3,5 @@
 """Top-level package for GraphQL WS."""
 
 __author__ = """Syrus Akbary"""
-__email__ = 'me@syrusakbary.com'
-__version__ = '0.3.1'
-
-
-from .base import BaseConnectionContext, BaseSubscriptionServer  # noqa: F401
+__email__ = "me@syrusakbary.com"
+__version__ = "0.3.1"

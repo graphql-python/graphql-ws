@@ -1,15 +1,22 @@
+try:
+    from aiohttp import WSMsgType
+    from graphql_ws.aiohttp import AiohttpConnectionContext, AiohttpSubscriptionServer
+except ImportError:  # pragma: no cover
+    WSMsgType = None
+
 from unittest import mock
 
 import pytest
-from aiohttp import WSMsgType
 
-from graphql_ws.aiohttp import AiohttpConnectionContext, AiohttpSubscriptionServer
 from graphql_ws.base import ConnectionClosedException
+
+if_aiohttp_installed = pytest.mark.skipif(
+    WSMsgType is None, reason="aiohttp is not installed"
+)
 
 
 class AsyncMock(mock.Mock):
     def __call__(self, *args, **kwargs):
-
         async def coro():
             return super(AsyncMock, self).__call__(*args, **kwargs)
 
@@ -24,6 +31,7 @@ def mock_ws():
     return ws
 
 
+@if_aiohttp_installed
 @pytest.mark.asyncio
 class TestConnectionContext:
     async def test_receive_good_data(self, mock_ws):
@@ -55,7 +63,7 @@ class TestConnectionContext:
     async def test_send(self, mock_ws):
         connection_context = AiohttpConnectionContext(ws=mock_ws)
         await connection_context.send("test")
-        mock_ws.send_str.assert_called_with("test")
+        mock_ws.send_str.assert_called_with('"test"')
 
     async def test_send_closed(self, mock_ws):
         mock_ws.closed = True
@@ -69,5 +77,6 @@ class TestConnectionContext:
         mock_ws.close.assert_called_with(code=123)
 
 
+@if_aiohttp_installed
 def test_subscription_server_smoke():
     AiohttpSubscriptionServer(schema=None)

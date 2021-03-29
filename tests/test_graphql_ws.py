@@ -1,12 +1,14 @@
 from collections import OrderedDict
+
 try:
     from unittest import mock
 except ImportError:
     import mock
 
 import pytest
+from graphql.execution.executors.sync import SyncExecutor
 
-from graphql_ws import base, constants
+from graphql_ws import base, base_sync, constants
 
 
 @pytest.fixture
@@ -18,7 +20,7 @@ def cc():
 
 @pytest.fixture
 def ss():
-    return base.BaseSubscriptionServer(schema=None)
+    return base_sync.BaseSyncSubscriptionServer(schema=None)
 
 
 class TestConnectionContextOperation:
@@ -93,13 +95,13 @@ class TestProcessMessage:
         ss.get_graphql_params.return_value = {"params": True}
         cc.has_operation = mock.Mock()
         cc.has_operation.return_value = True
-        ss.unsubscribe = mock.Mock()
-        ss.on_start = mock.Mock()
+        cc.unsubscribe = mock.Mock()
+        ss.execute = mock.Mock()
+        ss.send_message = mock.Mock()
         ss.process_message(
             cc, {"id": "1", "type": constants.GQL_START, "payload": {"a": "b"}}
         )
-        assert ss.unsubscribe.called
-        ss.on_start.assert_called_with(cc, "1", {"params": True})
+        assert cc.unsubscribe.called
 
     def test_start_bad_graphql_params(self, ss, cc):
         ss.get_graphql_params = mock.Mock()
@@ -109,9 +111,7 @@ class TestProcessMessage:
         ss.send_error = mock.Mock()
         ss.unsubscribe = mock.Mock()
         ss.on_start = mock.Mock()
-        ss.process_message(
-            cc, {"id": "1", "type": constants.GQL_START, "payload": {"a": "b"}}
-        )
+        ss.process_message(cc, {"id": "1", "type": None, "payload": {"a": "b"}})
         assert ss.send_error.called
         assert ss.send_error.call_args[0][:2] == (cc, "1")
         assert isinstance(ss.send_error.call_args[0][2], Exception)
@@ -135,13 +135,15 @@ def test_get_graphql_params(ss, cc):
         "query": "req",
         "variables": "vars",
         "operationName": "query",
-        "context": "ctx",
+        "context": {},
     }
-    assert ss.get_graphql_params(cc, payload) == {
+    params = ss.get_graphql_params(cc, payload)
+    assert isinstance(params.pop("executor"), SyncExecutor)
+    assert params == {
         "request_string": "req",
         "variable_values": "vars",
         "operation_name": "query",
-        "context_value": "ctx",
+        "context_value": {},
     }
 
 
@@ -159,7 +161,8 @@ def test_build_message_partial(ss):
     assert ss.build_message(id=None, op_type=None, payload="PAYLOAD") == {
         "payload": "PAYLOAD"
     }
-    assert ss.build_message(id=None, op_type=None, payload=None) == {}
+    with pytest.raises(AssertionError):
+        ss.build_message(id=None, op_type=None, payload=None)
 
 
 def test_send_execution_result(ss):
@@ -189,34 +192,10 @@ def test_send_message(ss, cc):
     cc.send = mock.Mock()
     cc.send.return_value = "returned"
     assert "returned" == ss.send_message(cc)
-    cc.send.assert_called_with('{"mess": "age"}')
+    cc.send.assert_called_with({"mess": "age"})
 
 
 class TestSSNotImplemented:
     def test_handle(self, ss):
         with pytest.raises(NotImplementedError):
             ss.handle(ws=None, request_context=None)
-
-    def test_on_open(self, ss):
-        with pytest.raises(NotImplementedError):
-            ss.on_open(connection_context=None)
-
-    def test_on_connect(self, ss):
-        with pytest.raises(NotImplementedError):
-            ss.on_connect(connection_context=None, payload=None)
-
-    def test_on_close(self, ss):
-        with pytest.raises(NotImplementedError):
-            ss.on_close(connection_context=None)
-
-    def test_on_connection_init(self, ss):
-        with pytest.raises(NotImplementedError):
-            ss.on_connection_init(connection_context=None, op_id=None, payload=None)
-
-    def test_on_stop(self, ss):
-        with pytest.raises(NotImplementedError):
-            ss.on_stop(connection_context=None, op_id=None)
-
-    def test_on_start(self, ss):
-        with pytest.raises(NotImplementedError):
-            ss.on_start(connection_context=None, op_id=None, params=None)

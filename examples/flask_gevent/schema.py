@@ -19,12 +19,16 @@ class Subscription(graphene.ObjectType):
     random_int = graphene.Field(RandomType)
 
     def resolve_count_seconds(root, info, up_to=5):
-        return Observable.interval(1000)\
-                         .map(lambda i: "{0}".format(i))\
-                         .take_while(lambda i: int(i) <= up_to)
+        return (
+            Observable.interval(1000)
+            .map(lambda i: "{0}".format(i))
+            .take_while(lambda i: int(i) <= up_to)
+        )
 
     def resolve_random_int(root, info):
-        return Observable.interval(1000).map(lambda i: RandomType(seconds=i, random_int=random.randint(0, 500)))
+        return Observable.interval(1000).map(
+            lambda i: RandomType(seconds=i, random_int=random.randint(0, 500))
+        )
 
 
 schema = graphene.Schema(query=Query, subscription=Subscription)

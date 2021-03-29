@@ -1,9 +1,9 @@
-
 from string import Template
 
 
 def render_graphiql():
-    return Template('''
+    return Template(
+        """
 <!DOCTYPE html>
 <html>
 <head>
@@ -116,9 +116,10 @@ def render_graphiql():
     );
   </script>
 </body>
-</html>''').substitute(
-        GRAPHIQL_VERSION='0.10.2',
-        SUBSCRIPTIONS_TRANSPORT_VERSION='0.7.0',
-        subscriptionsEndpoint='ws://localhost:8000/subscriptions',
-        endpointURL='/graphql',
+</html>"""
+    ).substitute(
+        GRAPHIQL_VERSION="0.10.2",
+        SUBSCRIPTIONS_TRANSPORT_VERSION="0.7.0",
+        subscriptionsEndpoint="ws://localhost:8000/subscriptions",
+        endpointURL="/graphql",
     )

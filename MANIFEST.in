@@ -5,6 +5,9 @@ include LICENSE
 include README.rst
 include tox.ini
 
+graft graphql_ws/django/templates
+graft examples
+prune examples/django_channels2/.cache
 graft tests
 global-exclude __pycache__
 global-exclude *.py[co]
