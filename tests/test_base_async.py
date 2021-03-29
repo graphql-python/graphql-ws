@@ -33,6 +33,7 @@ async def test_terminate(server: TestServer):
 
 async def test_send_error(server: TestServer):
     context = AsyncMock()
+    context.has_operation = mock.Mock()
     await server.send_error(connection_context=context, op_id=1, error="test error")
     context.send.assert_called_with(
         {"id": 1, "type": "error", "payload": {"message": "test error"}}
