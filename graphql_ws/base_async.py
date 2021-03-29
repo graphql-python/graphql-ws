@@ -2,7 +2,7 @@ import asyncio
 import inspect
 from abc import ABC, abstractmethod
 from types import CoroutineType, GeneratorType
-from typing import Any, Union, List, Dict
+from typing import Any, Dict, List, Union
 from weakref import WeakSet
 
 from graphql.execution.executors.asyncio import AsyncioExecutor
@@ -89,7 +89,12 @@ class BaseAsyncConnectionContext(base.BaseConnectionContext, ABC):
         )
 
     async def unsubscribe(self, op_id):
-        super().unsubscribe(op_id)
+        async_iterator = super().unsubscribe(op_id)
+        if (
+            getattr(async_iterator, "future", None)
+            and async_iterator.future.cancel()
+        ):
+            await async_iterator.future
 
     async def unsubscribe_all(self):
         awaitables = [self.unsubscribe(op_id) for op_id in list(self.operations)]
