@@ -54,7 +54,10 @@ async def resolve(
     else:
         items = None
     if items is not None:
-        children = [resolve(child, _container=data, _key=key) for key, child in items]
+        children = [
+            asyncio.ensure_future(resolve(child, _container=data, _key=key))
+            for key, child in items
+        ]
         if children:
             await asyncio.wait(children)
 
@@ -90,10 +93,7 @@ class BaseAsyncConnectionContext(base.BaseConnectionContext, ABC):
 
     async def unsubscribe(self, op_id):
         async_iterator = super().unsubscribe(op_id)
-        if (
-            getattr(async_iterator, "future", None)
-            and async_iterator.future.cancel()
-        ):
+        if getattr(async_iterator, "future", None) and async_iterator.future.cancel():
             await async_iterator.future
 
     async def unsubscribe_all(self):

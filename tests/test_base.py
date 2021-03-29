@@ -8,6 +8,7 @@ import json
 import pytest
 
 from graphql_ws import base
+from graphql_ws.base_sync import SubscriptionObserver
 
 
 def test_not_implemented():
@@ -77,3 +78,35 @@ def test_context_operations():
     assert not context.has_operation(1)
     # Removing a non-existant operation fails silently.
     context.remove_operation(999)
+
+
+def test_observer_data():
+    ws = mock.Mock()
+    context = base.BaseConnectionContext(ws)
+    send_result, send_error, send_message = mock.Mock(), mock.Mock(), mock.Mock()
+    observer = SubscriptionObserver(
+        connection_context=context,
+        op_id=1,
+        send_execution_result=send_result,
+        send_error=send_error,
+        send_message=send_message,
+    )
+    observer.on_next('data')
+    assert send_result.called
+    assert not send_error.called
+
+
+def test_observer_exception():
+    ws = mock.Mock()
+    context = base.BaseConnectionContext(ws)
+    send_result, send_error, send_message = mock.Mock(), mock.Mock(), mock.Mock()
+    observer = SubscriptionObserver(
+        connection_context=context,
+        op_id=1,
+        send_execution_result=send_result,
+        send_error=send_error,
+        send_message=send_message,
+    )
+    observer.on_next(TypeError('some bad message'))
+    assert send_error.called
+    assert not send_result.called

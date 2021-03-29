@@ -65,7 +65,11 @@ class SubscriptionObserver(Observer):
         self.send_message = send_message
 
     def on_next(self, value):
-        self.send_execution_result(self.connection_context, self.op_id, value)
+        if isinstance(value, Exception):
+            send_method = self.send_error
+        else:
+            send_method = self.send_execution_result
+        send_method(self.connection_context, self.op_id, value)
 
     def on_completed(self):
         self.send_message(self.connection_context, self.op_id, GQL_COMPLETE)
