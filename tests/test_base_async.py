@@ -15,23 +15,23 @@ class AsyncMock(mock.MagicMock):
         return super().__call__(*args, **kwargs)
 
 
-class TestServer(base_async.BaseAsyncSubscriptionServer):
+class TstServer(base_async.BaseAsyncSubscriptionServer):
     def handle(self, *args, **kwargs):
-        pass
+        pass  # pragma: no cover
 
 
 @pytest.fixture
 def server():
-    return TestServer(schema=None)
+    return TstServer(schema=None)
 
 
-async def test_terminate(server: TestServer):
+async def test_terminate(server: TstServer):
     context = AsyncMock()
     await server.on_connection_terminate(connection_context=context, op_id=1)
     context.close.assert_called_with(1011)
 
 
-async def test_send_error(server: TestServer):
+async def test_send_error(server: TstServer):
     context = AsyncMock()
     context.has_operation = mock.Mock()
     await server.send_error(connection_context=context, op_id=1, error="test error")
