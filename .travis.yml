@@ -10,6 +10,7 @@ deploy:
     tags: true
 install: pip install -U tox-travis
 language: python
+dist: focal
 python:
 - 3.9
 - 3.8
