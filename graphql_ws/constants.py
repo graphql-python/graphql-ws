@@ -14,5 +14,6 @@ GQL_SUBSCRIBE = "subscribe"  # Client -> Server  (graphql-transport-ws START equ
 GQL_DATA = "data"  # Server -> Client  (graphql-ws)
 GQL_NEXT = "next"  # Server -> Client  (graphql-transport-ws DATA equivalent)
 GQL_ERROR = "error"  # Server -> Client
-GQL_COMPLETE = "complete"  # Server -> Client  (and Client -> Server for graphql-transport-ws STOP equivalent)
+GQL_COMPLETE = "complete"  # Server -> Client
+# (and Client -> Server for graphql-transport-ws STOP equivalent)
 GQL_STOP = "stop"  # Client -> Server  (graphql-ws only)
