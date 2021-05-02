@@ -77,15 +77,20 @@ class TestProcessMessage:
         ss.process_message(cc, {"id": "1", "type": constants.GQL_CONNECTION_TERMINATE})
         ss.on_connection_terminate.assert_called_with(cc, "1")
 
-    def test_start(self, ss, cc):
+    @pytest.mark.parametrize(
+        "transport_ws_protocol,expected_type",
+        ((False, constants.GQL_START), (True, constants.GQL_SUBSCRIBE)),
+    )
+    def test_start(self, ss, cc, transport_ws_protocol, expected_type):
         ss.get_graphql_params = mock.Mock()
         ss.get_graphql_params.return_value = {"params": True}
         cc.has_operation = mock.Mock()
         cc.has_operation.return_value = False
+        cc.transport_ws_protocol = transport_ws_protocol
         ss.unsubscribe = mock.Mock()
         ss.on_start = mock.Mock()
         ss.process_message(
-            cc, {"id": "1", "type": constants.GQL_START, "payload": {"a": "b"}}
+            cc, {"id": "1", "type": expected_type, "payload": {"a": "b"}}
         )
         assert not ss.unsubscribe.called
         ss.on_start.assert_called_with(cc, "1", {"params": True})
@@ -117,9 +122,32 @@ class TestProcessMessage:
         assert isinstance(ss.send_error.call_args[0][2], Exception)
         assert not ss.on_start.called
 
-    def test_stop(self, ss, cc):
+    @pytest.mark.parametrize(
+        "transport_ws_protocol,stop_type,invalid_stop_type",
+        (
+            (False, constants.GQL_STOP, constants.GQL_COMPLETE),
+            (True, constants.GQL_COMPLETE, constants.GQL_STOP),
+        ),
+    )
+    def test_stop(
+        self,
+        ss,
+        cc,
+        transport_ws_protocol,
+        stop_type,
+        invalid_stop_type,
+    ):
         ss.on_stop = mock.Mock()
-        ss.process_message(cc, {"id": "1", "type": constants.GQL_STOP})
+        ss.send_error = mock.Mock()
+        cc.transport_ws_protocol = transport_ws_protocol
+
+        ss.process_message(cc, {"id": "1", "type": invalid_stop_type})
+        assert ss.send_error.called
+        assert ss.send_error.call_args[0][:2] == (cc, "1")
+        assert isinstance(ss.send_error.call_args[0][2], Exception)
+        assert not ss.on_stop.called
+
+        ss.process_message(cc, {"id": "1", "type": stop_type})
         ss.on_stop.assert_called_with(cc, "1")
 
     def test_invalid(self, ss, cc):
@@ -165,13 +193,18 @@ def test_build_message_partial(ss):
         ss.build_message(id=None, op_type=None, payload=None)
 
 
-def test_send_execution_result(ss):
+@pytest.mark.parametrize(
+    "transport_ws_protocol,expected_type",
+    ((False, constants.GQL_DATA), (True, constants.GQL_NEXT)),
+)
+def test_send_execution_result(ss, cc, transport_ws_protocol, expected_type):
+    cc.transport_ws_protocol = transport_ws_protocol
     ss.execution_result_to_dict = mock.Mock()
     ss.execution_result_to_dict.return_value = {"res": "ult"}
     ss.send_message = mock.Mock()
     ss.send_message.return_value = "returned"
     assert "returned" == ss.send_execution_result(cc, "1", "result")
-    ss.send_message.assert_called_with(cc, "1", constants.GQL_DATA, {"res": "ult"})
+    ss.send_message.assert_called_with(cc, "1", expected_type, {"res": "ult"})
 
 
 def test_execution_result_to_dict(ss):
