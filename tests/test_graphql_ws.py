@@ -165,7 +165,7 @@ def test_build_message_partial(ss):
         ss.build_message(id=None, op_type=None, payload=None)
 
 
-def test_send_execution_result(ss):
+def test_send_execution_result(ss, cc):
     ss.execution_result_to_dict = mock.Mock()
     ss.execution_result_to_dict.return_value = {"res": "ult"}
     ss.send_message = mock.Mock()

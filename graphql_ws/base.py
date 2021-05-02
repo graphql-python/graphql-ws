@@ -23,6 +23,8 @@ class ConnectionClosedException(Exception):
 
 
 class BaseConnectionContext(object):
+    transport_ws_protocol = False
+
     def __init__(self, ws, request_context=None):
         self.ws = ws
         self.operations = {}
