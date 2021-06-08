@@ -10,7 +10,7 @@ else:
     AuthMiddlewareStack = None
 
 
-websocket_urlpatterns = [path("subscriptions", GraphQLSubscriptionConsumer)]
+websocket_urlpatterns = [path("subscriptions", GraphQLSubscriptionConsumer.as_asgi())]
 
 application = ProtocolTypeRouter({"websocket": URLRouter(websocket_urlpatterns)})
 
