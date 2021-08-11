@@ -1,3 +1,4 @@
+{% load graphql_ws %}
 <!--
 The request to this GraphQL server provided the header "Accept: text/html"
 and as a result has been presented GraphiQL - an in-browser IDE for
@@ -104,7 +105,7 @@ add "&raw" to the end of the URL within a browser.
     }
     var fetcher;
     if (true) {
-      var subscriptionsEndpoint = (location.protocol === 'http:' ? 'ws' : 'wss') + '://' + location.host + '/subscriptions';
+      var subscriptionsEndpoint = (location.protocol === 'http:' ? 'ws' : 'wss') + '://' + location.host + '/{% graphql_ws_get_path %}';
       var subscriptionsClient = new window.SubscriptionsTransportWs.SubscriptionClient(subscriptionsEndpoint, {
         reconnect: true
       });
