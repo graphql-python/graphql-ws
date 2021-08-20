@@ -41,7 +41,7 @@ class BaseConnectionContext(object):
 
     def unsubscribe(self, op_id):
         async_iterator = self.remove_operation(op_id)
-        if hasattr(async_iterator, 'dispose'):
+        if hasattr(async_iterator, "dispose"):
             async_iterator.dispose()
         return async_iterator
 

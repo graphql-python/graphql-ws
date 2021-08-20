@@ -15,8 +15,10 @@ else:
 channels_version_tuple = get_version_tuple(channels_version)
 
 
-if channels_version_tuple > (3, 0 , 0):
-    websocket_urlpatterns = [path("subscriptions", GraphQLSubscriptionConsumer.as_asgi())]
+if channels_version_tuple > (3, 0, 0):
+    websocket_urlpatterns = [
+        path("subscriptions", GraphQLSubscriptionConsumer.as_asgi())
+    ]
 else:
     websocket_urlpatterns = [path("subscriptions", GraphQLSubscriptionConsumer)]
 

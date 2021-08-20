@@ -91,7 +91,7 @@ def test_observer_data():
         send_error=send_error,
         send_message=send_message,
     )
-    observer.on_next('data')
+    observer.on_next("data")
     assert send_result.called
     assert not send_error.called
 
@@ -107,6 +107,6 @@ def test_observer_exception():
         send_error=send_error,
         send_message=send_message,
     )
-    observer.on_next(TypeError('some bad message'))
+    observer.on_next(TypeError("some bad message"))
     assert send_error.called
     assert not send_result.called

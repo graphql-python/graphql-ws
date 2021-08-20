@@ -83,18 +83,18 @@ async def test_resolver_with_promise(server):
         connection_context=None, op_id=1, execution_result=result
     )
     assert server.send_message.called
-    assert result.data == {'test': [1, 2]}
+    assert result.data == {"test": [1, 2]}
 
 
 async def test_resolver_with_nested_promise(server):
     server.send_message = AsyncMock()
     result = mock.Mock()
     inner = promise.Promise(lambda resolve, reject: resolve(2))
-    outer = promise.Promise(lambda resolve, reject: resolve({'in': inner}))
+    outer = promise.Promise(lambda resolve, reject: resolve({"in": inner}))
     result.data = {"test": [1, outer]}
     result.errors = None
     await server.send_execution_result(
         connection_context=None, op_id=1, execution_result=result
     )
     assert server.send_message.called
-    assert result.data == {'test': [1, {'in': 2}]}
+    assert result.data == {"test": [1, {"in": 2}]}
