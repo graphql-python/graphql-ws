@@ -1,6 +1,10 @@
 import json
 
-from channels.generic.websockets import JsonWebsocketConsumer
+try:
+    # Channels version > 1 renamed the websockets module to websocket.
+    from channels.generic.websockets import JsonWebsocketConsumer
+except ImportError:
+    from channels.generic.websocket import JsonWebsocketConsumer
 from graphene_django.settings import graphene_settings
 
 from .base import BaseConnectionContext
