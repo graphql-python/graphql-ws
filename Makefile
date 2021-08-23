@@ -50,9 +50,12 @@ clean-test: ## remove test and coverage artifacts
 lint: ## check style with flake8
 	flake8 graphql_ws tests
 
+format:
+	black ./graphql_ws ./tests
+
 test: ## run tests quickly with the default Python
 	py.test
-	
+
 
 test-all: ## run tests on every Python version with tox
 	tox

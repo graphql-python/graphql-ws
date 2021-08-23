@@ -1,5 +1,7 @@
+from channels import __version__ as channels_version
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.sessions import SessionMiddlewareStack
+from django.utils.version import get_version_tuple
 from django.apps import apps
 from django.urls import path
 from .consumers import GraphQLSubscriptionConsumer
@@ -10,7 +12,15 @@ else:
     AuthMiddlewareStack = None
 
 
-websocket_urlpatterns = [path("subscriptions", GraphQLSubscriptionConsumer)]
+channels_version_tuple = get_version_tuple(channels_version)
+
+
+if channels_version_tuple > (3, 0, 0):
+    websocket_urlpatterns = [
+        path("subscriptions", GraphQLSubscriptionConsumer.as_asgi())
+    ]
+else:
+    websocket_urlpatterns = [path("subscriptions", GraphQLSubscriptionConsumer)]
 
 application = ProtocolTypeRouter({"websocket": URLRouter(websocket_urlpatterns)})
 

@@ -7,7 +7,6 @@ from .subscriptions import subscription_server
 
 
 class GraphQLSubscriptionConsumer(AsyncJsonWebsocketConsumer):
-
     async def connect(self):
         self.connection_context = None
         if WS_PROTOCOL in self.scope["subprotocols"]:

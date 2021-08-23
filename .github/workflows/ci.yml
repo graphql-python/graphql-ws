@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+      matrix:
+       include:
+         - python-version: 2.7
+           tox-version: "py27"
+         - python-version: 3.6
+           tox-version: "py36"
+         - python-version: 3.7
+           tox-version: "py37"
+         - python-version: 3.8
+           tox-version: "py38"
+         - python-version: 3.9
+           tox-version: "py39"
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        run: |
+          pip install -U tox
+      - name: Run Tests
+        run: tox -e ${{ matrix.tox-version }}
