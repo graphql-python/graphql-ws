@@ -2,6 +2,26 @@
 History
 =======
 
+=======
+0.4.1 (2021-08-24)
+==================
+- Bump version
+
+0.4.0 (2021-08-24)
+==================
+- Removed support for Django 2
+- Added GitHub actions
+- Added Channels v3 compatibility
+- Added new module to support Channels > 1 #18
+- Fix: tests are running again
+- Fix: Correctly unsubscribe after on_start operation is complete
+- Breaking changes
+
+0.3.1 (2020-05-19)
+==================
+- update travis deployment credentials and remove travis autogen config
+
+
 0.3.0 (2018-09-25)
 ==================
 
