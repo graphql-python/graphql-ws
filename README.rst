@@ -165,7 +165,7 @@ applications:
     ASGI_APPLICATION = 'graphql_ws.django.routing.auth_application'
 
 Run ``./manage.py runserver`` and go to
-`http://localhost:8000/graphql`__ to test!
+`http://localhost:8000/graphql <http://localhost:8000/graphql>`__ to test!
 
 
 Python 2  servers
