@@ -2,6 +2,11 @@
 History
 =======
 
+0.4.3 (2021-08-24)
+==================
+- Add markdown support for package description
+- Fix: PyPi publish
+
 0.4.2 (2021-08-24)
 ==================
 - Bump django version
