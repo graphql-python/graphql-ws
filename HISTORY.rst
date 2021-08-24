@@ -2,10 +2,13 @@
 History
 =======
 
+0.4.2 (2021-08-24)
+==================
+- Bump django version
 
 0.4.1 (2021-08-24)
 ==================
-- Bump version
+- Bump graphql-ws version in source code
 
 0.4.0 (2021-08-24)
 ==================
