@@ -2,6 +2,10 @@
 History
 =======
 
+0.4.4 (2021-08-24)
+==================
+- Fix: Readme syntax
+
 0.4.3 (2021-08-24)
 ==================
 - Add markdown support for package description
