@@ -4,13 +4,17 @@ from collections import OrderedDict
 from graphql import format_error, graphql
 
 from .constants import (
+    GQL_COMPLETE,
     GQL_CONNECTION_ERROR,
     GQL_CONNECTION_INIT,
     GQL_CONNECTION_TERMINATE,
     GQL_DATA,
     GQL_ERROR,
+    GQL_NEXT,
     GQL_START,
     GQL_STOP,
+    GQL_SUBSCRIBE,
+    TRANSPORT_WS_PROTOCOL,
 )
 
 
@@ -19,10 +23,15 @@ class ConnectionClosedException(Exception):
 
 
 class BaseConnectionContext(object):
+    transport_ws_protocol = False
+
     def __init__(self, ws, request_context=None):
         self.ws = ws
         self.operations = {}
         self.request_context = request_context
+        self.transport_ws_protocol = request_context and TRANSPORT_WS_PROTOCOL in (
+            request_context.get("subprotocols") or []
+        )
 
     def has_operation(self, op_id):
         return op_id in self.operations
@@ -84,12 +93,16 @@ class BaseSubscriptionServer(object):
         elif op_type == GQL_CONNECTION_TERMINATE:
             return self.on_connection_terminate(connection_context, op_id)
 
-        elif op_type == GQL_START:
+        elif op_type == (
+            GQL_SUBSCRIBE if connection_context.transport_ws_protocol else GQL_START
+        ):
             assert isinstance(payload, dict), "The payload must be a dict"
             params = self.get_graphql_params(connection_context, payload)
             return self.on_start(connection_context, op_id, params)
 
-        elif op_type == GQL_STOP:
+        elif op_type == (
+            GQL_COMPLETE if connection_context.transport_ws_protocol else GQL_STOP
+        ):
             return self.on_stop(connection_context, op_id)
 
         else:
@@ -142,7 +155,12 @@ class BaseSubscriptionServer(object):
 
     def send_execution_result(self, connection_context, op_id, execution_result):
         result = self.execution_result_to_dict(execution_result)
-        return self.send_message(connection_context, op_id, GQL_DATA, result)
+        return self.send_message(
+            connection_context,
+            op_id,
+            GQL_NEXT if connection_context.transport_ws_protocol else GQL_DATA,
+            result,
+        )
 
     def execution_result_to_dict(self, execution_result):
         result = OrderedDict()
