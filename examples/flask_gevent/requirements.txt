@@ -1,6 +1,6 @@
 graphql_ws
 gevent
-flask
+flask==1.1.4
 flask_graphql
 flask_sockets
 graphene>=2.0
