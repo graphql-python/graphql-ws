@@ -23,11 +23,33 @@ Python 2 application servers:
 Installation instructions
 =========================
 
-For instaling graphql-ws, just run this command in your shell
+Install with Pip:
+
+.. |pypi| image:: https://img.shields.io/pypi/v/graphql-ws
+   :alt: PyPI
+   :target: https://pypi.org/project/graphql-ws/
+   
+.. |python| image:: https://img.shields.io/pypi/pyversions/graphql-ws
+   :alt: PyPI - Python Version
+   :target: https://pypi.org/project/graphql-ws/
+
+.. |conda| image:: https://img.shields.io/conda/v/conda-forge/graphql-ws
+   :alt: Conda
+   :target: https://anaconda.org/conda-forge/graphql-ws
+
+|pypi| |python|
 
 .. code:: bash
 
-    pip install graphql-ws
+   pip install graphql-ws
+
+Or Conda:
+
+|conda|
+
+.. code:: bash
+
+   conda install -c conda-forge graphql-ws
 
 
 Examples
