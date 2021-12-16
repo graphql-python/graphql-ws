@@ -7,7 +7,7 @@ setup_observable_extension()
 
 class ChannelsConnectionContext(BaseAsyncConnectionContext):
     def __init__(self, *args, **kwargs):
-        super(ChannelsConnectionContext, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.socket_closed = False
 
     async def send(self, data):
@@ -34,6 +34,12 @@ class ChannelsSubscriptionServer(BaseAsyncSubscriptionServer):
         connection_context = ChannelsConnectionContext(ws, request_context)
         await self.on_open(connection_context)
         return connection_context
+
+    def get_graphql_params(self, connection_context, payload):
+        params = super().get_graphql_params(connection_context, payload)
+        if graphene_settings.MIDDLEWARE:
+            params["middleware"] = graphene_settings.MIDDLEWARE
+        return params
 
 
 subscription_server = ChannelsSubscriptionServer(schema=graphene_settings.SCHEMA)
