@@ -2,20 +2,25 @@ import json
 
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
-from ..constants import WS_PROTOCOL
+from ..constants import TRANSPORT_WS_PROTOCOL, WS_PROTOCOL
 from .subscriptions import subscription_server
 
 
 class GraphQLSubscriptionConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.connection_context = None
-        if WS_PROTOCOL in self.scope["subprotocols"]:
-            self.connection_context = await subscription_server.handle(
-                ws=self, request_context=self.scope
-            )
-            await self.accept(subprotocol=WS_PROTOCOL)
-        else:
+        found_protocol = None
+        for protocol in [WS_PROTOCOL, TRANSPORT_WS_PROTOCOL]:
+            if protocol in self.scope["subprotocols"]:
+                found_protocol = protocol
+                break
+        if not found_protocol:
             await self.close()
+            return
+        self.connection_context = await subscription_server.handle(
+            ws=self, request_context=self.scope
+        )
+        await self.accept(subprotocol=found_protocol)
 
     async def disconnect(self, code):
         if self.connection_context:
