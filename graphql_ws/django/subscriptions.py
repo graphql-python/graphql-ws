@@ -1,5 +1,8 @@
 from graphene_django.settings import graphene_settings
-from ..base_async import BaseAsyncConnectionContext, BaseAsyncSubscriptionServer
+from graphql import MiddlewareManager
+
+from ..base_async import (BaseAsyncConnectionContext,
+                          BaseAsyncSubscriptionServer)
 from ..observable_aiter import setup_observable_extension
 
 setup_observable_extension()
@@ -37,8 +40,13 @@ class ChannelsSubscriptionServer(BaseAsyncSubscriptionServer):
 
     def get_graphql_params(self, connection_context, payload):
         params = super().get_graphql_params(connection_context, payload)
-        if graphene_settings.MIDDLEWARE:
-            params["middleware"] = graphene_settings.MIDDLEWARE
+        middleware = graphene_settings.MIDDLEWARE
+        if middleware:
+            if not isinstance(middleware, MiddlewareManager):
+                middleware = MiddlewareManager(
+                    *middleware, wrap_in_promise=False
+                )
+            params["middleware"] = middleware
         return params
 
 
