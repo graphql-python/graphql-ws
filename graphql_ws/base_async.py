@@ -41,25 +41,28 @@ async def resolve(
     Recursively wait on any awaitable children of a data element and resolve any
     Promises.
     """
-    if is_awaitable(data):
-        data = await data
-        if isinstance(data, Promise):
-            data = data.value  # type: Any
-        if _container is not None:
-            _container[_key] = data
-    if isinstance(data, dict):
-        items = data.items()
-    elif isinstance(data, list):
-        items = enumerate(data)
-    else:
-        items = None
-    if items is not None:
-        children = [
-            asyncio.ensure_future(resolve(child, _container=data, _key=key))
-            for key, child in items
-        ]
-        if children:
-            await asyncio.wait(children)
+    stack = [(data, _container, _key)]
+
+    while stack:
+        data, _container, _key = stack.pop()
+
+        if is_awaitable(data):
+            data = await data
+            if isinstance(data, Promise):
+                data = data.value  # type: Any
+            if _container is not None:
+                _container[_key] = data
+        if isinstance(data, dict):
+            items = data.items()
+        elif isinstance(data, list):
+            items = enumerate(data)
+        else:
+            items = None
+        if items is not None:
+            stack.extend([
+                (child, data, key)
+                for key, child in items
+            ])
 
 
 class BaseAsyncConnectionContext(base.BaseConnectionContext, ABC):
